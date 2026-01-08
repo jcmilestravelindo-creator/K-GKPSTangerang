@@ -246,8 +246,8 @@
           const [showPinModal, setShowPinModal] = useState(false); 
           const [showShareModal, setShowShareModal] = useState(false); 
           
-          // DEFAULT LINK DRIVE USER
-          const [urlToShare, setUrlToShare] = useState('https://drive.google.com/file/d/141Hirda2LwmlNRroy5qI0FuKCca6jZIU/view?usp=sharing');
+          // --- UPDATED: LINK VERCEL ---
+          const [urlToShare, setUrlToShare] = useState('https://k-gkps-tangerang.vercel.app/');
           
           const [viewData, setViewData] = useState(null);
           const [selectedIds, setSelectedIds] = useState(new Set()); 
@@ -454,9 +454,8 @@
                                     </div>
                                 )}
                                 
-                                <div className="bg-yellow-50 p-2 rounded border border-yellow-200 text-xs text-yellow-800 text-justify">
-                                    <strong>PENTING:</strong> Jika hasil scan hanya menampilkan <strong>Layar Putih / Halaman Kosong</strong>, itu karena <strong>Google Drive tidak mengizinkan file HTML berjalan sebagai Aplikasi</strong> demi keamanan.<br/><br/>
-                                    <strong>Solusi:</strong> Download file ini dan buka langsung dari File Manager HP Anda, atau gunakan layanan hosting web gratis seperti Vercel/Netlify.
+                                <div className="bg-blue-50 p-2 rounded border border-blue-200 text-xs text-blue-800">
+                                    <strong>Info:</strong> Link ini mengarah ke aplikasi yang sudah di-hosting di Vercel. Pastikan HP terhubung ke internet saat membuka.
                                 </div>
                             </div>
                             <div className="mt-6 flex justify-end">

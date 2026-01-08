@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Kolekte GKPS - Aman & Standalone</title>
+    
+    <!-- 1. ENGINE: React, ReactDOM, Babel, dan QRious (Generator QR Baru) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tambahan Library QR Code yang lebih handal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <!-- 2. STYLE: Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        handwriting: ['cursive'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Style Khusus Print & Layout -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Modal Scrollbar */
+        .modal-scroll::-webkit-scrollbar { width: 8px; }
+        .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .modal-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        
+        /* --- OPTIMASI KHUSUS CETAK (PRINT CSS) --- */
+        @media print {
+            @page { 
+                size: A4; 
+                margin: 5mm; 
+            }
+            body { 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+                font-size: 11px; 
+                background-color: white;
+            }
+            
+            .no-print, nav, button, .guidance-box { display: none !important; }
+            
+            main { 
+                width: 100%; 
+                max-width: none; 
+                padding: 0; 
+                margin: 0; 
+            }
+            
+            .print-header { 
+                padding: 10px !important; 
+                border-bottom-width: 2px !important; 
+            }
+            .print-header h1 { font-size: 16px !important; margin-bottom: 2px; }
+            .print-header h2 { font-size: 14px !important; }
+            .print-header p { display: none; }
+
+            .print-grid-compact { 
+                display: grid; 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 8px !important; 
+                padding: 8px !important;
+            }
+            .print-input-compact {
+                border: none !important;
+                padding: 0 !important;
+                height: auto !important;
+                font-weight: bold;
+                font-size: 11px;
+            }
+            label { font-size: 9px !important; text-transform: uppercase; color: #666; }
+
+            table { font-size: 10px !important; }
+            th, td { padding: 4px 2px !important; }
+            input[type="number"] { font-size: 10px !important; }
+
+            .print-signature-area { 
+                margin-top: 10px !important; 
+                padding: 10px !important; 
+                border-top: 1px solid #ccc;
+                page-break-inside: avoid; 
+            }
+            .print-signature-box { height: 40px !important; } 
+            .print-signature-input { 
+                padding-top: 5px !important; 
+                font-size: 12px !important;
+            }
+            
+            .print-security-footer {
+                display: block !important;
+                font-size: 9px !important;
+                text-align: center;
+                border: 1px solid #ddd;
+                padding: 4px;
+                margin-top: 8px;
+                page-break-inside: avoid;
+            }
+
+            ::-webkit-scrollbar { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+
+    <!-- LOGIKA APLIKASI -->
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- DEFINISI IKON ---
+        const IconBase = ({ children, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+
+        const Save = ({ className }) => <IconBase className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>;
+        const Printer = ({ className }) => <IconBase className={className}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></IconBase>;
+        const Trash2 = ({ className }) => <IconBase className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconBase>;
+        const Calculator = ({ className }) => <IconBase className={className}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></IconBase>;
+        const FileText = ({ className }) => <IconBase className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></IconBase>;
+        const CheckCircle = ({ className }) => <IconBase className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconBase>;
+        const BarChart2 = ({ className }) => <IconBase className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></IconBase>;
+        const History = ({ className }) => <IconBase className={className}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></IconBase>;
+        const Download = ({ className }) => <IconBase className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></IconBase>;
+        const Upload = ({ className }) => <IconBase className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
+        const Eye = ({ className }) => <IconBase className={className}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></IconBase>;
+        const X = ({ className }) => <IconBase className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>;
+        const HelpCircle = ({ className }) => <IconBase className={className}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
+        const Lock = ({ className }) => <IconBase className={className}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconBase>;
+        const QrCode = ({ className }) => <IconBase className={className}><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></IconBase>;
+
+        // --- DATA KONSTAN ---
+        const DENOMINATIONS = [
+          { value: 100000, label: 'Rp 100.000' },
+          { value: 50000, label: 'Rp 50.000' },
+          { value: 20000, label: 'Rp 20.000' },
+          { value: 10000, label: 'Rp 10.000' },
+          { value: 5000, label: 'Rp 5.000' },
+          { value: 2000, label: 'Rp 2.000' },
+          { value: 1000, label: 'Rp 1.000' },
+          { value: 500, label: 'Koin/Lain' },
+        ];
+
+        const KANTONG_LABELS = [
+          { id: 'k1', name: 'Kantong 1', color: 'bg-blue-50 border-blue-200' },
+          { id: 'k2', name: 'Kantong 2', color: 'bg-green-50 border-green-200' },
+          { id: 'k3', name: 'Kantong 3', color: 'bg-yellow-50 border-yellow-200' },
+          { id: 'k4', name: 'Kantong 4', color: 'bg-purple-50 border-purple-200' },
+          { id: 'k5', name: 'Kantong HBN', color: 'bg-orange-50 border-orange-200' },
+        ];
+
+        const SECTORS = [
+            "Sektor I", "Sektor II", "Sektor III", "Sektor IV", "Sektor V", "Sektor VI",
+            "Sektor VII", "Sektor VIII", "Sektor IX", "Sektor X", "Sektor XI", "Sektor XII"
+        ];
+
+        const formatRupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+
+        // --- KOMPONEN GRAFIK SEDERHANA ---
+        const SimpleChart = ({ history }) => {
+          if (!history || history.length === 0) return <div className="text-center text-gray-400 p-4">Belum ada data riwayat.</div>;
+          
+          const data = history.slice(0, 5).reverse();
+          const maxVal = Math.max(...data.map(d => d.total));
+          const chartHeight = 160; 
+
+          return (
+            <div className="w-full p-4 overflow-x-auto">
+              <div className="flex items-end justify-around space-x-4 h-64 border-l border-b border-gray-300 pb-2">
+                {data.map((item, idx) => {
+                  const height = maxVal > 0 ? (item.total / maxVal) * chartHeight : 0;
+                  return (
+                    <div key={idx} className="flex flex-col items-center group relative w-24">
+                      <div className="absolute bottom-full mb-2 w-full text-center z-10">
+                        <span className="inline-block px-1 bg-white/80 rounded text-[10px] sm:text-xs font-bold text-gray-800 whitespace-nowrap shadow-sm">
+                            {formatRupiah(item.total)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-all duration-500" style={{ height: `${height}px` }}></div>
+                      <div className="text-[10px] text-gray-500 mt-2 text-center w-full font-medium">
+                        {new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        };
+
+        // --- KOMPONEN QR CODE CANVAS ---
+        const QrCodeCanvas = ({ value }) => {
+            const canvasRef = useRef(null);
+
+            useEffect(() => {
+                if (canvasRef.current && value) {
+                    try {
+                        // Menggunakan QRious untuk generate QR Code di Client-Side
+                        new QRious({
+                            element: canvasRef.current,
+                            value: value,
+                            size: 250, // Ukuran diperbesar
+                            level: 'H' // Error correction tinggi (High) agar tahan link panjang
+                        });
+                    } catch (e) {
+                        console.error("Gagal membuat QR:", e);
+                    }
+                }
+            }, [value]);
+
+            return <canvas ref={canvasRef} className="border shadow-sm rounded"/>;
+        };
+
+        // --- KOMPONEN APLIKASI UTAMA ---
+        function App() {
+          const initialState = {
+            metadata: {
+              tanggal: new Date().toISOString().split('T')[0],
+              minggu: '',
+              sektor: 'Sektor I', 
+              pengkhotbah: '',
+              liturgis: '',
+              jenisIbadah: 'Minggu Pagi',
+            },
+            kehadiran: { pria: 0, wanita: 0, anak: 0 },
+            uang: KANTONG_LABELS.reduce((acc, k) => {
+              acc[k.id] = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {});
+              return acc;
+            }, {}),
+            tandaTangan: {
+              penghitung1: '', sign_penghitung1: '',
+              penghitung2: '', sign_penghitung2: '',
+              bendahara: '', sign_bendahara: '',
+            }
+          };
+
+          const [data, setData] = useState(() => {
+            const saved = localStorage.getItem('gkps_kolekte_data');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (!parsed.metadata.sektor) parsed.metadata.sektor = 'Sektor I';
+                if (!parsed.uang.k5) parsed.uang.k5 = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {});
+                return parsed;
+            }
+            return initialState;
+          });
+
+          const [history, setHistory] = useState(() => {
+            const savedHist = localStorage.getItem('gkps_kolekte_history');
+            return savedHist ? JSON.parse(savedHist) : [];
+          });
+
+          const [appPin, setAppPin] = useState(() => {
+              return localStorage.getItem('gkps_app_pin') || '123456';
+          });
+
+          const [lastSaved, setLastSaved] = useState(null);
+          const [showHistory, setShowHistory] = useState(false);
+          const [showHelp, setShowHelp] = useState(false);
+          const [showPinModal, setShowPinModal] = useState(false); 
+          const [showShareModal, setShowShareModal] = useState(false); 
+          const [urlToShare, setUrlToShare] = useState('');
+          const [viewData, setViewData] = useState(null);
+          const [selectedIds, setSelectedIds] = useState(new Set()); 
+          const fileInputRef = useRef(null);
+
+          const [pinForm, setPinForm] = useState({ old: '', new: '', confirm: '' });
+
+          useEffect(() => {
+            localStorage.setItem('gkps_kolekte_data', JSON.stringify(data));
+            setLastSaved(new Date().toLocaleTimeString('id-ID'));
+          }, [data]);
+
+          useEffect(() => {
+            localStorage.setItem('gkps_kolekte_history', JSON.stringify(history));
+          }, [history]);
+
+          useEffect(() => {
+            localStorage.setItem('gkps_app_pin', appPin);
+          }, [appPin]);
+
+          const handleMetaChange = (e) => setData({ ...data, metadata: { ...data.metadata, [e.target.name]: e.target.value } });
+          const handleAttChange = (e) => setData({ ...data, kehadiran: { ...data.kehadiran, [e.target.name]: parseInt(e.target.value) || 0 } });
+          const handleSignChange = (e) => setData({ ...data, tandaTangan: { ...data.tandaTangan, [e.target.name]: e.target.value } });
+          const handleMoneyChange = (kantongId, denomValue, qty) => {
+            const val = parseInt(qty) || 0;
+            setData(prev => ({ ...prev, uang: { ...prev.uang, [kantongId]: { ...prev.uang[kantongId], [denomValue]: val } } }));
+          };
+
+          const calculateBagTotal = (kantongId, sourceData = data) => {
+            if (!sourceData.uang[kantongId]) return 0;
+            return DENOMINATIONS.reduce((total, d) => total + ((sourceData.uang[kantongId][d.value] || 0) * d.value), 0);
+          };
+
+          const calculateGrandTotal = (sourceData = data) => {
+            return KANTONG_LABELS.reduce((total, k) => total + calculateBagTotal(k.id, sourceData), 0);
+          };
+
+          const handleExport = () => {
+             const blob = new Blob([JSON.stringify({ data, history, backupDate: new Date().toISOString(), appName: 'GKPS Kolekte App' }, null, 2)], { type: "application/json" });
+             const url = URL.createObjectURL(blob);
+             const link = document.createElement("a");
+             link.href = url;
+             link.download = `GKPS_Backup_${new Date().toISOString().split('T')[0]}.json`;
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
+          };
+
+          const handleImportClick = () => fileInputRef.current.click();
+          const handleFileChange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    if (parsed.appName === 'GKPS Kolekte App') {
+                        if (confirm(`Restore data dari tanggal ${new Date(parsed.backupDate).toLocaleDateString()}?`)) {
+                            setData(parsed.data);
+                            setHistory(parsed.history);
+                            alert("Berhasil!");
+                        }
+                    } else alert("File tidak valid!");
+                } catch (err) { alert("File rusak."); }
+                e.target.value = null; 
+            };
+            reader.readAsText(file);
+          };
+
+          const resetData = () => { if (confirm('Reset form?')) { setData(initialState); localStorage.removeItem('gkps_kolekte_data'); } };
+          const saveToHistory = () => { if (confirm('Simpan ke Riwayat?')) { setHistory([{ id: Date.now(), date: data.metadata.tanggal, jenis: data.metadata.jenisIbadah, total: calculateGrandTotal(data), details: data }, ...history]); alert('Tersimpan!'); } };
+          const handlePrint = () => window.print();
+
+          const toggleSelectId = (id) => {
+            const newSet = new Set(selectedIds);
+            if (newSet.has(id)) newSet.delete(id); else newSet.add(id);
+            setSelectedIds(newSet);
+          };
+
+          const toggleSelectAll = () => {
+            if (selectedIds.size === history.length) setSelectedIds(new Set());
+            else setSelectedIds(new Set(history.map(h => h.id)));
+          };
+
+          const deleteSelected = () => {
+            if (selectedIds.size === 0) return;
+            const input = prompt("KEAMANAN: Masukkan PIN Bendahara untuk menghapus data terpilih:");
+            if (input !== appPin) { 
+                alert("Akses Ditolak! PIN Salah."); 
+                return; 
+            }
+            if(confirm(`Yakin ingin menghapus ${selectedIds.size} data terpilih secara permanen?`)) {
+                const newHistory = history.filter(h => !selectedIds.has(h.id));
+                setHistory(newHistory);
+                setSelectedIds(new Set());
+                alert("Data terpilih berhasil dihapus.");
+            }
+          };
+
+          const handleChangePin = () => {
+              if (pinForm.old !== appPin) {
+                  alert("PIN Lama salah!");
+                  return;
+              }
+              if (pinForm.new.length < 6) {
+                  alert("PIN Baru minimal 6 angka!");
+                  return;
+              }
+              if (pinForm.new !== pinForm.confirm) {
+                  alert("Konfirmasi PIN Baru tidak cocok!");
+                  return;
+              }
+              setAppPin(pinForm.new);
+              alert("PIN Berhasil diubah!");
+              setPinForm({ old: '', new: '', confirm: '' });
+              setShowPinModal(false);
+          };
+
+          return (
+            <div className="min-h-screen bg-gray-100 font-sans text-gray-800 print:bg-white">
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" style={{ display: 'none' }} />
+
+              <nav className="bg-blue-800 text-white shadow-lg print:hidden sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between h-16">
+                    <div className="flex items-center space-x-3"><Calculator className="h-8 w-8" /><span className="font-bold text-xl tracking-tight hidden sm:block">GKPS App</span></div>
+                    <div className="flex items-center space-x-2">
+                       <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
+                       <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan Sinkronisasi"><HelpCircle className="h-5 w-5"/></button>
+                       <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share via QR Code"><QrCode className="h-5 w-5"/></button>
+                       <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN Bendahara"><Lock className="h-5 w-5 text-yellow-300"/></button>
+                       <button onClick={() => setShowHistory(!showHistory)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Riwayat"><BarChart2 className="h-5 w-5"/></button>
+                       <button onClick={saveToHistory} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan"><Save className="h-5 w-5"/></button>
+                       <button onClick={handleExport} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Backup"><Download className="h-5 w-5 text-green-300"/></button>
+                       <button onClick={handleImportClick} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Restore"><Upload className="h-5 w-5 text-yellow-300"/></button>
+                       <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset"><Trash2 className="h-5 w-5"/></button>
+                       <button onClick={handlePrint} className="flex items-center space-x-2 px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold"><Printer className="h-5 w-5"/><span>Cetak</span></button>
+                    </div>
+                  </div>
+                </div>
+              </nav>
+
+              <main className="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8 print:max-w-full print:p-0">
+                
+                {/* MODAL GANTI PIN */}
+                {showPinModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-sm shadow-2xl flex flex-col p-6">
+                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
+                                <Lock className="w-5 h-5 mr-2 text-blue-600"/> Ganti PIN Bendahara
+                            </h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">PIN Lama</label>
+                                    <input type="password" value={pinForm.old} onChange={(e) => setPinForm({...pinForm, old: e.target.value})} className="w-full border rounded p-2" placeholder="Masukkan PIN lama" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">PIN Baru</label>
+                                    <input type="password" value={pinForm.new} onChange={(e) => setPinForm({...pinForm, new: e.target.value})} className="w-full border rounded p-2" placeholder="6 digit angka" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi PIN Baru</label>
+                                    <input type="password" value={pinForm.confirm} onChange={(e) => setPinForm({...pinForm, confirm: e.target.value})} className="w-full border rounded p-2" placeholder="Ulangi PIN baru" />
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end space-x-2">
+                                <button onClick={() => {setShowPinModal(false); setPinForm({old:'', new:'', confirm:''});}} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Batal</button>
+                                <button onClick={handleChangePin} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Simpan PIN</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL SHARE QR */}
+                {showShareModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-md shadow-2xl flex flex-col p-6">
+                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
+                                <QrCode className="w-5 h-5 mr-2 text-blue-600"/> Bagikan Aplikasi via QR
+                            </h3>
+                            <div className="space-y-4">
+                                <p className="text-sm text-gray-600">Masukkan link di mana file HTML ini disimpan (misalnya link Google Drive, Vercel, atau Website Gereja) untuk membuat QR Code.</p>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Link File Aplikasi</label>
+                                    <input 
+                                        type="text" 
+                                        value={urlToShare} 
+                                        onChange={(e) => setUrlToShare(e.target.value)} 
+                                        className="w-full border rounded p-2" 
+                                        placeholder="https://..." 
+                                    />
+                                </div>
+
+                                {urlToShare && (
+                                    <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border">
+                                        {/* Menggunakan Generator Client-Side QRious */}
+                                        <QrCodeCanvas value={urlToShare} />
+                                        <p className="text-xs text-gray-500 mt-2">Scan untuk membuka aplikasi</p>
+                                    </div>
+                                )}
+                                
+                                <div className="bg-yellow-50 p-2 rounded border border-yellow-200 text-xs text-yellow-800">
+                                    <strong>Catatan:</strong> Jika menggunakan Google Drive, pastikan link aksesnya sudah diatur ke <em>"Anyone with the link"</em>.
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end">
+                                <button onClick={() => setShowShareModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showHistory && (
+                    <div className="mb-6 bg-white shadow-xl rounded-lg p-6 print:hidden border border-blue-200">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 className="font-bold text-lg text-gray-800 flex items-center">
+                                <History className="inline w-5 h-5 mr-2 text-blue-600"/> Riwayat
+                            </h3>
+                            <div className="flex space-x-2 items-center">
+                                {selectedIds.size > 0 && (
+                                    <button onClick={deleteSelected} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-md hover:bg-red-200 font-bold transition flex items-center border border-red-200">
+                                        <Trash2 className="w-3 h-3 mr-1"/> Hapus Terpilih ({selectedIds.size})
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <SimpleChart history={history} />
+                        
+                        <div className="overflow-auto max-h-60 mt-4 border rounded shadow-sm">
+                             <table className="min-w-full text-sm">
+                                <thead className="bg-gray-100 text-gray-700 sticky top-0">
+                                    <tr>
+                                        <th className="p-2 text-center w-10 border-b">
+                                            <input type="checkbox" checked={history.length > 0 && selectedIds.size === history.length} onChange={toggleSelectAll} className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                        </th>
+                                        <th className="p-2 text-left border-b">Tanggal</th>
+                                        <th className="p-2 border-b">Jenis</th>
+                                        <th className="p-2 text-right border-b">Total</th>
+                                        <th className="p-2 text-center border-b">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {history.length === 0 ? (
+                                        <tr><td colSpan="5" className="p-4 text-center text-gray-400 italic">Belum ada data riwayat.</td></tr>
+                                    ) : (
+                                        history.map(h => (
+                                            <tr key={h.id} className={`border-b hover:bg-gray-50 transition ${selectedIds.has(h.id) ? 'bg-blue-50' : ''}`}>
+                                                <td className="p-2 text-center">
+                                                    <input type="checkbox" checked={selectedIds.has(h.id)} onChange={() => toggleSelectId(h.id)} className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                                </td>
+                                                <td className="p-2 text-gray-700 font-medium">{new Date(h.date).toLocaleDateString('id-ID')}</td>
+                                                <td className="p-2 text-gray-600">{h.jenis}</td>
+                                                <td className="p-2 text-right font-bold text-gray-800">{formatRupiah(h.total)}</td>
+                                                <td className="p-2 text-center">
+                                                    <button onClick={()=>setViewData(h.details)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-100 transition" title="Lihat Detail"><Eye className="w-4 h-4"/></button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                             </table>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-400 italic text-right">* Centang kotak untuk memilih data yang ingin dihapus. Perlu PIN Bendahara.</div>
+                    </div>
+                )}
+
+                {/* --- FORMULIR UTAMA --- */}
+                <div className="bg-white shadow-xl rounded-lg overflow-hidden print:shadow-none print:rounded-none">
+                    <div className="border-b-4 border-blue-800 p-6 text-center print-header">
+                        <h1 className="text-2xl font-bold uppercase">Formulir Setoran Kolekte</h1>
+                        <h2 className="text-xl font-semibold text-blue-800">GKPS TANGERANG</h2>
+                        <p className="text-sm text-gray-500 mt-1">Isi data di bawah. Perhitungan otomatis.</p>
+                    </div>
+
+                    <div className="p-6 bg-gray-50 border-b border-gray-200 print-grid-compact print:bg-white">
+                        <div className="space-y-4 print:space-y-1">
+                            <div><label className="block text-sm font-medium">Tanggal</label><input type="date" name="tanggal" value={data.metadata.tanggal} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
+                            
+                            <div className="grid grid-cols-2 gap-4 print:gap-2">
+                                <div><label className="block text-sm font-medium">Sektor Pelayan</label>
+                                    <select name="sektor" value={data.metadata.sektor} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact">
+                                        {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <div><label className="block text-sm font-medium">Jenis Ibadah</label>
+                                    <select name="jenisIbadah" value={data.metadata.jenisIbadah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact">
+                                        <option>Minggu Pagi</option><option>Minggu Siang</option><option>Minggu Sore</option><option>Ibadah Sektor</option><option>Partonggoan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div><label className="block text-sm font-medium">Minggu Ke / Nama</label><input type="text" name="minggu" value={data.metadata.minggu} onChange={handleMetaChange} placeholder="Cth: Exaudi" className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
+                        </div>
+
+                        <div className="space-y-4 print:space-y-1">
+                            <div><label className="block text-sm font-medium">Pengkhotbah / Pelayan</label><input type="text" name="pengkhotbah" value={data.metadata.pengkhotbah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Kehadiran (Jiwa)</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="text-center"><span className="text-xs text-gray-500 block">Pria</span><input type="number" name="pria" value={data.kehadiran.pria} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                    <div className="text-center"><span className="text-xs text-gray-500 block">Wanita</span><input type="number" name="wanita" value={data.kehadiran.wanita} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                    <div className="text-center"><span className="text-xs text-gray-500 block">Anak</span><input type="number" name="anak" value={data.kehadiran.anak} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                </div>
+                            </div>
+                            <div className="text-right text-xs font-bold text-gray-700 mt-1">Total: {data.kehadiran.pria + data.kehadiran.wanita + data.kehadiran.anak} Jiwa</div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 print:p-2 border-b">
+                        <h3 className="text-lg font-bold mb-4 flex items-center print:hidden"><FileText className="w-5 h-5 mr-2"/> Rincian Perhitungan</h3>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-300 border">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="py-2 pl-2 text-left text-sm">Pecahan</th>
+                                        {KANTONG_LABELS.map(k => <th key={k.id} className={`px-2 py-2 text-center text-sm ${k.color}`}>{k.name}</th>)}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {DENOMINATIONS.map(d => (
+                                        <tr key={d.value}>
+                                            <td className="whitespace-nowrap py-1 pl-2 text-sm font-medium">{d.label}</td>
+                                            {KANTONG_LABELS.map(k => (
+                                                <td key={`${k.id}-${d.value}`} className="px-1 py-1 text-center">
+                                                    <div className="flex justify-center items-center">
+                                                        <input type="number" min="0" placeholder="0" 
+                                                            value={data.uang[k.id][d.value] || ''} 
+                                                            onChange={e => handleMoneyChange(k.id, d.value, e.target.value)} 
+                                                            className="w-16 text-center border-gray-300 rounded text-sm print:w-full print:border-none print:bg-transparent print:p-0 print:text-right" 
+                                                        />
+                                                        <span className="text-xs text-gray-400 ml-1 print:hidden">lbr</span>
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                    <tr className="bg-gray-100 font-bold">
+                                        <td className="py-2 pl-2 text-sm">TOTAL</td>
+                                        {KANTONG_LABELS.map(k => <td key={`t-${k.id}`} className="px-2 py-2 text-right text-sm">{formatRupiah(calculateBagTotal(k.id))}</td>)}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="mt-4 flex justify-end print:mt-2">
+                             <div className="bg-blue-900 text-white p-3 rounded shadow print:bg-white print:text-black print:border print:shadow-none print:w-full print:flex print:justify-between print:p-1">
+                                <span className="font-bold mr-4">TOTAL KESELURUHAN:</span>
+                                <span className="font-bold text-xl print:text-lg">{formatRupiah(calculateGrandTotal())}</span>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 bg-gray-50 print-signature-area print:bg-white">
+                        <h3 className="text-sm font-bold uppercase mb-4 print:mb-2">Pengesahan</h3>
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                            {[
+                                {role:'Penghitung 1', key:'penghitung1'}, 
+                                {role:'Penghitung 2', key:'penghitung2'}, 
+                                {role:'Bendahara', key:'bendahara'}
+                            ].map(signer => (
+                                <div key={signer.key} className="flex flex-col items-center">
+                                    <div className="h-24 w-full border-b border-gray-400 mb-2 relative print-signature-box">
+                                        <textarea 
+                                            name={`sign_${signer.key}`} 
+                                            placeholder="(Tanda Tangan)" 
+                                            value={data.tandaTangan[`sign_${signer.key}`]} 
+                                            onChange={handleSignChange} 
+                                            className="w-full h-full text-center align-bottom border-none bg-transparent resize-none pt-8 italic font-handwriting print-signature-input"
+                                        />
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        name={signer.key} 
+                                        placeholder={`Nama ${signer.role}`} 
+                                        value={data.tandaTangan[signer.key]} 
+                                        onChange={handleSignChange} 
+                                        className="text-center w-full bg-transparent border-none font-bold text-sm"
+                                    />
+                                    <label className="text-xs text-gray-500 mt-1">{signer.role}</label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="hidden print:block print-security-footer">
+                    <strong>KEAMANAN DATA:</strong> Arsip digital telah dicadangkan. Dokumen ini sah sebagai bukti setoran fisik. 
+                    <br/><i>Dicetak pada: {new Date().toLocaleString('id-ID')}</i>
+                </div>
+
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-8 mt-4 print:hidden">
+                    <p className="text-sm text-blue-700 font-bold">Keamanan Data: Gunakan tombol Download/Upload di menu atas untuk Backup data.</p>
+                </div>
+
+                {viewData && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 print:hidden">
+                        <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+                            <div className="p-4 border-b flex justify-between"><h3 className="font-bold">Detail (Read-Only)</h3><button onClick={()=>setViewData(null)}><X className="w-6 h-6"/></button></div>
+                            <div className="p-6 overflow-y-auto modal-scroll bg-gray-50">
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <div className="bg-white p-4 rounded shadow">
+                                        <h4 className="font-bold border-b mb-2">Metadata</h4>
+                                        <p className="text-sm">Tanggal: <b>{viewData.metadata.tanggal}</b></p>
+                                        <p className="text-sm">Sektor: <b>{viewData.metadata.sektor}</b></p>
+                                        <p className="text-sm">Jenis: <b>{viewData.metadata.jenisIbadah}</b></p>
+                                        <p className="text-sm">Minggu: <b>{viewData.metadata.minggu}</b></p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded shadow">
+                                        <h4 className="font-bold border-b mb-2">Total</h4>
+                                        <p className="text-2xl font-bold text-blue-800">{formatRupiah(calculateGrandTotal(viewData))}</p>
+                                        <p className="text-xs text-gray-500 mt-2">Disahkan oleh: {viewData.tandaTangan.bendahara}</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white p-4 rounded shadow mt-4">
+                                    <h4 className="font-bold border-b mb-2">Rincian Perhitungan</h4>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm border">
+                                            <thead className="bg-gray-100">
+                                                <tr>
+                                                    <th className="p-2 text-left">Pecahan</th>
+                                                    {KANTONG_LABELS.map(k => <th key={k.id} className={`p-2 text-center ${k.color}`}>{k.name}</th>)}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {DENOMINATIONS.map(d => (
+                                                    <tr key={d.value} className="border-b">
+                                                        <td className="p-2 font-medium">{d.label}</td>
+                                                        {KANTONG_LABELS.map(k => {
+                                                            const qty = viewData.uang[k.id]?.[d.value] || 0;
+                                                            const subtotal = qty * d.value;
+                                                            return (
+                                                                <td key={`${k.id}-${d.value}`} className="p-2 text-center">
+                                                                    {qty > 0 ? (
+                                                                        <div>
+                                                                            <span className="font-bold">{qty}</span> <span className="text-xs text-gray-500">lbr</span>
+                                                                            <div className="text-xs text-blue-600">{formatRupiah(subtotal)}</div>
+                                                                        </div>
+                                                                    ) : <span className="text-gray-300">-</span>}
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white p-4 rounded shadow mt-4">
+                                    <h4 className="font-bold border-b mb-4">Pengesahan (Arsip)</h4>
+                                    <div className="grid grid-cols-3 gap-4 text-center">
+                                        {[
+                                            {role:'Penghitung 1', key:'penghitung1'}, 
+                                            {role:'Penghitung 2', key:'penghitung2'}, 
+                                            {role:'Bendahara', key:'bendahara'}
+                                        ].map(signer => (
+                                            <div key={signer.key} className="flex flex-col items-center">
+                                                <div className="h-16 w-full border-b border-gray-200 mb-2 flex items-end justify-center">
+                                                     {viewData.tandaTangan[`sign_${signer.key}`] ? (
+                                                        <span className="font-handwriting text-lg italic">{viewData.tandaTangan[`sign_${signer.key}`]}</span>
+                                                     ) : (
+                                                        <span className="text-xs text-gray-400 italic">(Tidak ada ttd)</span>
+                                                     )}
+                                                </div>
+                                                <div className="font-bold text-sm">{viewData.tandaTangan[signer.key] || '-'}</div>
+                                                <label className="text-xs text-gray-500 mt-1">{signer.role}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div className="p-4 border-t text-right"><button onClick={()=>setViewData(null)} className="px-4 py-2 bg-blue-600 text-white rounded">Tutup</button></div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL BANTUAN SINKRONISASI */}
+                {showHelp && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex justify-center items-center p-4 print:hidden animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col">
+                            <div className="p-4 border-b bg-blue-50 flex justify-between items-center">
+                                <h3 className="font-bold text-lg text-blue-900 flex items-center">
+                                    <HelpCircle className="w-5 h-5 mr-2"/> Panduan Sinkronisasi Data
+                                </h3>
+                                <button onClick={() => setShowHelp(false)} className="p-1 hover:bg-blue-200 rounded-full text-blue-900"><X className="w-6 h-6"/></button>
+                            </div>
+                            <div className="p-6 overflow-y-auto max-h-[70vh] text-sm text-gray-700 space-y-4">
+                                <p>Aplikasi ini bersifat <b>Offline/Mandiri</b>. Untuk memindahkan data dari HP Petugas ke HP/Laptop Bendahara, ikuti langkah berikut:</p>
+                                
+                                <div className="bg-green-50 p-3 rounded border border-green-200">
+                                    <h4 className="font-bold text-green-800 mb-1">1. Di HP Petugas (Pengirim)</h4>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li>Pastikan data sudah diinput.</li>
+                                        <li>Klik tombol <span className="inline-flex items-center bg-blue-700 text-white px-1 rounded mx-1"><Download className="w-3 h-3 text-green-300 mr-1"/> Backup</span> di menu atas.</li>
+                                        <li>File <b>.json</b> akan terunduh ke HP.</li>
+                                        <li>Kirim file tersebut ke Bendahara via <b>WhatsApp / Email</b>.</li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                                    <h4 className="font-bold text-yellow-800 mb-1">2. Di HP/Laptop Bendahara (Penerima)</h4>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li>Simpan file <b>.json</b> yang diterima dari WhatsApp.</li>
+                                        <li>Buka Aplikasi Kolekte ini.</li>
+                                        <li>Klik tombol <span className="inline-flex items-center bg-blue-700 text-white px-1 rounded mx-1"><Upload className="w-3 h-3 text-yellow-300 mr-1"/> Restore</span> di menu atas.</li>
+                                        <li>Pilih file <b>.json</b> tadi.</li>
+                                        <li>Data akan otomatis masuk ke aplikasi Bendahara.</li>
+                                    </ul>
+                                </div>
+                                <p className="text-xs text-gray-500 italic text-center mt-4">Catatan: Proses ini bisa dilakukan antar semua perangkat (Android, iPhone, Laptop Windows/Mac).</p>
+                            </div>
+                            <div className="p-4 border-t bg-gray-50 text-right">
+                                <button onClick={() => setShowHelp(false)} className="px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition">Mengerti</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+              </main>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

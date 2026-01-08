@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Kolekte GKPS - Aman & Standalone</title>
     
-    <!-- 1. ENGINE: React, ReactDOM, Babel, dan QRious (Generator QR Baru) -->
+    <!-- 1. ENGINE: React, ReactDOM, dan Babel Standalone -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Tambahan Library QR Code yang lebih handal -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     
     <!-- 2. STYLE: Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -199,29 +197,6 @@
           );
         };
 
-        // --- KOMPONEN QR CODE CANVAS ---
-        const QrCodeCanvas = ({ value }) => {
-            const canvasRef = useRef(null);
-
-            useEffect(() => {
-                if (canvasRef.current && value) {
-                    try {
-                        // Menggunakan QRious untuk generate QR Code di Client-Side
-                        new QRious({
-                            element: canvasRef.current,
-                            value: value,
-                            size: 250, // Ukuran diperbesar
-                            level: 'H' // Error correction tinggi (High) agar tahan link panjang
-                        });
-                    } catch (e) {
-                        console.error("Gagal membuat QR:", e);
-                    }
-                }
-            }, [value]);
-
-            return <canvas ref={canvasRef} className="border shadow-sm rounded"/>;
-        };
-
         // --- KOMPONEN APLIKASI UTAMA ---
         function App() {
           const initialState = {
@@ -270,7 +245,10 @@
           const [showHelp, setShowHelp] = useState(false);
           const [showPinModal, setShowPinModal] = useState(false); 
           const [showShareModal, setShowShareModal] = useState(false); 
-          const [urlToShare, setUrlToShare] = useState('');
+          
+          // DEFAULT LINK DRIVE USER
+          const [urlToShare, setUrlToShare] = useState('https://drive.google.com/file/d/141Hirda2LwmlNRroy5qI0FuKCca6jZIU/view?usp=sharing');
+          
           const [viewData, setViewData] = useState(null);
           const [selectedIds, setSelectedIds] = useState(new Set()); 
           const fileInputRef = useRef(null);
@@ -451,9 +429,9 @@
                                 <QrCode className="w-5 h-5 mr-2 text-blue-600"/> Bagikan Aplikasi via QR
                             </h3>
                             <div className="space-y-4">
-                                <p className="text-sm text-gray-600">Masukkan link di mana file HTML ini disimpan (misalnya link Google Drive, Vercel, atau Website Gereja) untuk membuat QR Code.</p>
+                                <p className="text-sm text-gray-600">Scan QR Code ini untuk membuka Aplikasi Kolekte:</p>
                                 
-                                <div>
+                                <div className="hidden">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Link File Aplikasi</label>
                                     <input 
                                         type="text" 
@@ -466,14 +444,19 @@
 
                                 {urlToShare && (
                                     <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border">
-                                        {/* Menggunakan Generator Client-Side QRious */}
-                                        <QrCodeCanvas value={urlToShare} />
-                                        <p className="text-xs text-gray-500 mt-2">Scan untuk membuka aplikasi</p>
+                                        {/* Menggunakan API Generator QR Code yang Stabil */}
+                                        <img 
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(urlToShare)}`} 
+                                            alt="QR Code" 
+                                            className="w-48 h-48 border shadow-sm"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p>
                                     </div>
                                 )}
                                 
-                                <div className="bg-yellow-50 p-2 rounded border border-yellow-200 text-xs text-yellow-800">
-                                    <strong>Catatan:</strong> Jika menggunakan Google Drive, pastikan link aksesnya sudah diatur ke <em>"Anyone with the link"</em>.
+                                <div className="bg-yellow-50 p-2 rounded border border-yellow-200 text-xs text-yellow-800 text-justify">
+                                    <strong>PENTING:</strong> Jika hasil scan hanya menampilkan <strong>Layar Putih / Halaman Kosong</strong>, itu karena <strong>Google Drive tidak mengizinkan file HTML berjalan sebagai Aplikasi</strong> demi keamanan.<br/><br/>
+                                    <strong>Solusi:</strong> Download file ini dan buka langsung dari File Manager HP Anda, atau gunakan layanan hosting web gratis seperti Vercel/Netlify.
                                 </div>
                             </div>
                             <div className="mt-6 flex justify-end">

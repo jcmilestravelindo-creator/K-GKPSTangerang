@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Kolekte GKPS - Aman & Standalone</title>
     
-    <!-- 1. ENGINE: React, ReactDOM, dan Babel Standalone -->
+    <!-- 1. ENGINE: React, ReactDOM, Babel, QRious, dan FIREBASE (Baru) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <!-- Firebase Compat Library (Agar mudah digunakan di single file) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
     <!-- 2. STYLE: Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -137,6 +142,11 @@
         const HelpCircle = ({ className }) => <IconBase className={className}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
         const Lock = ({ className }) => <IconBase className={className}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconBase>;
         const QrCode = ({ className }) => <IconBase className={className}><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></IconBase>;
+        const Cloud = ({ className }) => <IconBase className={className}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></IconBase>;
+        const CloudOff = ({ className }) => <IconBase className={className}><path d="M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0 4 15h9a5 5 0 0 0 1.7-.3"></path><line x1="1" y1="1" x2="23" y2="23"></line></IconBase>;
+        const Settings = ({ className }) => <IconBase className={className}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></IconBase>;
+        // KEY ICON FOR RECOVERY
+        const Key = ({ className }) => <IconBase className={className}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></IconBase>;
 
         // --- DATA KONSTAN ---
         const DENOMINATIONS = [
@@ -197,6 +207,28 @@
           );
         };
 
+        // --- KOMPONEN QR CODE CANVAS ---
+        const QrCodeCanvas = ({ value }) => {
+            const canvasRef = useRef(null);
+
+            useEffect(() => {
+                if (canvasRef.current && value) {
+                    try {
+                        new QRious({
+                            element: canvasRef.current,
+                            value: value,
+                            size: 250, 
+                            level: 'H' 
+                        });
+                    } catch (e) {
+                        console.error("Gagal membuat QR:", e);
+                    }
+                }
+            }, [value]);
+
+            return <canvas ref={canvasRef} className="border shadow-sm rounded"/>;
+        };
+
         // --- KOMPONEN APLIKASI UTAMA ---
         function App() {
           const initialState = {
@@ -240,20 +272,81 @@
               return localStorage.getItem('gkps_app_pin') || '123456';
           });
 
+          // STATE FIREBASE & SINKRONISASI
+          const [fbConfigRaw, setFbConfigRaw] = useState(() => localStorage.getItem('gkps_fb_config') || '');
+          const [db, setDb] = useState(null);
+          const [syncStatus, setSyncStatus] = useState('offline'); // offline, connecting, connected, error
+          const [showDbModal, setShowDbModal] = useState(false);
+
           const [lastSaved, setLastSaved] = useState(null);
           const [showHistory, setShowHistory] = useState(false);
           const [showHelp, setShowHelp] = useState(false);
           const [showPinModal, setShowPinModal] = useState(false); 
           const [showShareModal, setShowShareModal] = useState(false); 
-          
-          // --- UPDATED: LINK VERCEL ---
           const [urlToShare, setUrlToShare] = useState('https://k-gkps-tangerang.vercel.app/');
-          
           const [viewData, setViewData] = useState(null);
           const [selectedIds, setSelectedIds] = useState(new Set()); 
           const fileInputRef = useRef(null);
-
           const [pinForm, setPinForm] = useState({ old: '', new: '', confirm: '' });
+
+          // INIT FIREBASE
+          useEffect(() => {
+              if (fbConfigRaw) {
+                  try {
+                      const config = JSON.parse(fbConfigRaw);
+                      if (!firebase.apps.length) {
+                          firebase.initializeApp(config);
+                      }
+                      setDb(firebase.firestore());
+                      setSyncStatus('connected');
+                  } catch (e) {
+                      console.error("Firebase Init Error:", e);
+                      setSyncStatus('error');
+                  }
+              }
+          }, [fbConfigRaw]);
+
+          // REALTIME SYNC (READ & WRITE)
+          useEffect(() => {
+              if (!db) return;
+
+              // ID Dokumen Unik berdasarkan Tanggal & Jenis Ibadah
+              // Contoh: 2023-10-29_Minggu_Pagi
+              const docId = `${data.metadata.tanggal}_${data.metadata.jenisIbadah.replace(/\s+/g, '_')}`;
+              const docRef = db.collection('gkps_transactions').doc(docId);
+
+              // 1. DENGARKAN PERUBAHAN DARI SERVER (Laptop/HP Lain)
+              const unsubscribe = docRef.onSnapshot((doc) => {
+                  const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
+                  if (doc.exists && source === "Server") {
+                      // Jika ada data baru dari server, update tampilan lokal
+                      const remoteData = doc.data();
+                      // Cek sederhana agar tidak loop (hanya update jika beda)
+                      if (JSON.stringify(remoteData) !== JSON.stringify(data)) {
+                          setData(remoteData);
+                          console.log("Data disinkronkan dari server");
+                      }
+                  }
+              }, (error) => {
+                  console.error("Sync Error:", error);
+                  setSyncStatus('error');
+              });
+
+              // 2. KIRIM PERUBAHAN KE SERVER (Debounce 2 detik agar tidak spam)
+              const saveDataToServer = setTimeout(() => {
+                  docRef.set(data, { merge: true })
+                      .then(() => setSyncStatus('connected'))
+                      .catch((e) => {
+                          console.error("Write Error:", e);
+                          setSyncStatus('error');
+                      });
+              }, 2000);
+
+              return () => {
+                  unsubscribe();
+                  clearTimeout(saveDataToServer);
+              };
+          }, [data, db]); // Dijalankan setiap 'data' berubah
 
           useEffect(() => {
             localStorage.setItem('gkps_kolekte_data', JSON.stringify(data));
@@ -335,10 +428,7 @@
           const deleteSelected = () => {
             if (selectedIds.size === 0) return;
             const input = prompt("KEAMANAN: Masukkan PIN Bendahara untuk menghapus data terpilih:");
-            if (input !== appPin) { 
-                alert("Akses Ditolak! PIN Salah."); 
-                return; 
-            }
+            if (input !== appPin) { alert("Akses Ditolak! PIN Salah."); return; }
             if(confirm(`Yakin ingin menghapus ${selectedIds.size} data terpilih secara permanen?`)) {
                 const newHistory = history.filter(h => !selectedIds.has(h.id));
                 setHistory(newHistory);
@@ -348,22 +438,33 @@
           };
 
           const handleChangePin = () => {
-              if (pinForm.old !== appPin) {
-                  alert("PIN Lama salah!");
-                  return;
-              }
-              if (pinForm.new.length < 6) {
-                  alert("PIN Baru minimal 6 angka!");
-                  return;
-              }
-              if (pinForm.new !== pinForm.confirm) {
-                  alert("Konfirmasi PIN Baru tidak cocok!");
-                  return;
-              }
+              if (pinForm.old !== appPin) { alert("PIN Lama salah!"); return; }
+              if (pinForm.new.length < 6) { alert("PIN Baru minimal 6 angka!"); return; }
+              if (pinForm.new !== pinForm.confirm) { alert("Konfirmasi PIN Baru tidak cocok!"); return; }
               setAppPin(pinForm.new);
               alert("PIN Berhasil diubah!");
               setPinForm({ old: '', new: '', confirm: '' });
               setShowPinModal(false);
+          };
+
+          // FITUR RESET PIN LUPA
+          const handleForgotPin = () => {
+              const input = prompt("Masukkan Kode Master Pemulihan (Hubungi Administrator/Programmer):");
+              if (input === 'GKPS2025') { // Hardcoded Master Key
+                  setAppPin('123456');
+                  localStorage.setItem('gkps_app_pin', '123456');
+                  alert("PIN berhasil di-reset ke default: 123456");
+                  setShowPinModal(false);
+                  setPinForm({ old: '', new: '', confirm: '' });
+              } else {
+                  alert("Kode Master salah!");
+              }
+          };
+
+          const handleSaveConfig = () => {
+              localStorage.setItem('gkps_fb_config', fbConfigRaw);
+              alert("Konfigurasi disimpan. Silakan refresh halaman.");
+              window.location.reload();
           };
 
           return (
@@ -376,14 +477,28 @@
                     <div className="flex items-center space-x-3"><Calculator className="h-8 w-8" /><span className="font-bold text-xl tracking-tight hidden sm:block">GKPS App</span></div>
                     <div className="flex items-center space-x-2">
                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
-                       <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan Sinkronisasi"><HelpCircle className="h-5 w-5"/></button>
+                       
+                       {/* INDIKATOR & TOMBOL SINKRONISASI */}
+                       <button 
+                           onClick={() => setShowDbModal(true)} 
+                           className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
+                           title={syncStatus === 'connected' ? 'Online & Sinkron' : 'Mode Offline / Konfigurasi Cloud'}
+                       >
+                           {syncStatus === 'connected' ? <Cloud className="h-5 w-5"/> : <CloudOff className="h-5 w-5"/>}
+                       </button>
+
+                       <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan"><HelpCircle className="h-5 w-5"/></button>
                        <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share via QR Code"><QrCode className="h-5 w-5"/></button>
                        <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN Bendahara"><Lock className="h-5 w-5 text-yellow-300"/></button>
                        <button onClick={() => setShowHistory(!showHistory)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Riwayat"><BarChart2 className="h-5 w-5"/></button>
-                       <button onClick={saveToHistory} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan"><Save className="h-5 w-5"/></button>
-                       <button onClick={handleExport} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Backup"><Download className="h-5 w-5 text-green-300"/></button>
-                       <button onClick={handleImportClick} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Restore"><Upload className="h-5 w-5 text-yellow-300"/></button>
-                       <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset"><Trash2 className="h-5 w-5"/></button>
+                       <button onClick={saveToHistory} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan Arsip"><Save className="h-5 w-5"/></button>
+                       
+                       <div className="hidden md:flex bg-blue-900 rounded p-1 space-x-1">
+                           <button onClick={handleExport} className="p-1.5 hover:bg-blue-800 rounded transition" title="Backup"><Download className="h-4 w-4 text-green-300"/></button>
+                           <button onClick={handleImportClick} className="p-1.5 hover:bg-blue-800 rounded transition" title="Restore"><Upload className="h-4 w-4 text-yellow-300"/></button>
+                       </div>
+
+                       <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset Form"><Trash2 className="h-5 w-5"/></button>
                        <button onClick={handlePrint} className="flex items-center space-x-2 px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold"><Printer className="h-5 w-5"/><span>Cetak</span></button>
                     </div>
                   </div>
@@ -392,6 +507,38 @@
 
               <main className="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8 print:max-w-full print:p-0">
                 
+                {/* MODAL CONFIG FIREBASE */}
+                {showDbModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col p-6">
+                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
+                                <Settings className="w-5 h-5 mr-2 text-blue-600"/> Pengaturan Database (Cloud)
+                            </h3>
+                            <div className="space-y-3">
+                                <p className="text-sm text-gray-600">Agar data sinkron otomatis (Realtime) antara HP dan Laptop, masukkan <b>Konfigurasi Firebase</b> Anda di sini.</p>
+                                <textarea 
+                                    value={fbConfigRaw}
+                                    onChange={(e) => setFbConfigRaw(e.target.value)}
+                                    rows="6"
+                                    className="w-full border rounded p-2 text-xs font-mono bg-gray-50"
+                                    placeholder='Contoh: {"apiKey": "AIzaSy...", "authDomain": "...", "projectId": "..."}'
+                                />
+                                <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                                    <strong>Cara mendapatkan Config:</strong><br/>
+                                    1. Buka <a href="https://console.firebase.google.com/" target="_blank" className="underline">console.firebase.google.com</a><br/>
+                                    2. Buat Project -> Add Web App<br/>
+                                    3. Copy bagian dalam kurung kurawal <code>{`{ ... }`}</code><br/>
+                                    4. Paste di kolom di atas.
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end space-x-2">
+                                <button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
+                                <button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Simpan & Koneksi</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* MODAL GANTI PIN */}
                 {showPinModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
@@ -413,9 +560,15 @@
                                     <input type="password" value={pinForm.confirm} onChange={(e) => setPinForm({...pinForm, confirm: e.target.value})} className="w-full border rounded p-2" placeholder="Ulangi PIN baru" />
                                 </div>
                             </div>
-                            <div className="mt-6 flex justify-end space-x-2">
-                                <button onClick={() => {setShowPinModal(false); setPinForm({old:'', new:'', confirm:''});}} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Batal</button>
-                                <button onClick={handleChangePin} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Simpan PIN</button>
+                            <div className="mt-6 flex justify-between">
+                                {/* TOMBOL LUPA PIN */}
+                                <button onClick={handleForgotPin} className="text-xs text-red-500 hover:underline flex items-center">
+                                    <Key className="w-3 h-3 mr-1"/> Lupa PIN Lama?
+                                </button>
+                                <div className="flex space-x-2">
+                                    <button onClick={() => {setShowPinModal(false); setPinForm({old:'', new:'', confirm:''});}} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Batal</button>
+                                    <button onClick={handleChangePin} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Simpan PIN</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -444,12 +597,8 @@
 
                                 {urlToShare && (
                                     <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border">
-                                        {/* Menggunakan API Generator QR Code yang Stabil */}
-                                        <img 
-                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(urlToShare)}`} 
-                                            alt="QR Code" 
-                                            className="w-48 h-48 border shadow-sm"
-                                        />
+                                        {/* Menggunakan Generator Client-Side QRious */}
+                                        <QrCodeCanvas value={urlToShare} />
                                         <p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p>
                                     </div>
                                 )}

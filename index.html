@@ -291,6 +291,7 @@
           // Kita akan menggunakan DEFAULT_FIREBASE_CONFIG sebagai fallback utama jika local kosong/salah
           const [fbConfigRaw, setFbConfigRaw] = useState(() => localStorage.getItem('gkps_fb_config') || DEFAULT_FIREBASE_CONFIG);
           const [db, setDb] = useState(null);
+          const [authUser, setAuthUser] = useState(null); // User state
           const [syncStatus, setSyncStatus] = useState('offline'); 
           const [lastErrorMessage, setLastErrorMessage] = useState(''); 
           const [showDbModal, setShowDbModal] = useState(false);
@@ -321,19 +322,25 @@
                       const firestore = firebase.firestore();
                       setDb(firestore);
                       
-                      // COBA LOGIN ANONIM AGAR PUNYA AKSES KE DATABASE
+                      // LISTENER AUTH STATE CHANGE (Lebih Robust)
                       // Pastikan "Anonymous" diaktifkan di Firebase Console -> Authentication -> Sign-in method
-                      firebase.auth().signInAnonymously()
-                          .then(() => {
-                              console.log("Logged in anonymously to Firebase");
+                      const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+                          if (user) {
+                              setAuthUser(user);
                               setSyncStatus('connected');
                               setLastErrorMessage('');
-                          })
-                          .catch((error) => {
-                              console.error("Auth Error:", error);
-                              setSyncStatus('error');
-                              setLastErrorMessage(`Gagal Login (Auth): ${error.message}. Pastikan 'Anonymous' aktif di Firebase Console.`);
-                          });
+                              console.log("Auth User detected:", user.uid);
+                          } else {
+                              console.log("No user, trying to sign in anonymously...");
+                              firebase.auth().signInAnonymously().catch((error) => {
+                                  console.error("Auth Error:", error);
+                                  setSyncStatus('error');
+                                  setLastErrorMessage(`Gagal Login (Auth): ${error.message}. Pastikan 'Anonymous' aktif di Firebase Console.`);
+                              });
+                          }
+                      });
+                      
+                      return () => unsubscribe();
 
                   } catch (e) {
                       console.error("Firebase Init Error:", e);
@@ -344,8 +351,9 @@
           }, [fbConfigRaw]);
 
           // REALTIME SYNC (READ & WRITE)
+          // HANYA JALAN JIKA DB DAN AUTHUSER SUDAH ADA
           useEffect(() => {
-              if (!db) return;
+              if (!db || !authUser) return;
 
               const docId = `${data.metadata.tanggal}_${data.metadata.jenisIbadah.replace(/\s+/g, '_')}`;
               const docRef = db.collection('gkps_transactions').doc(docId);
@@ -372,9 +380,7 @@
               });
 
               const saveDataToServer = setTimeout(() => {
-                  // Cek user login sebelum tulis
-                  const user = firebase.auth().currentUser;
-                  if (user) {
+                  if (authUser) {
                       docRef.set(data, { merge: true })
                           .then(() => {
                               setSyncStatus('connected');
@@ -396,7 +402,7 @@
                   unsubscribe();
                   clearTimeout(saveDataToServer);
               };
-          }, [data, db]);
+          }, [data, db, authUser]); // Added authUser dependency
 
           useEffect(() => {
             localStorage.setItem('gkps_kolekte_data', JSON.stringify(data));
@@ -603,13 +609,9 @@
                                     {lastErrorMessage && <span className="font-bold mt-1 block">Error: {lastErrorMessage}</span>}
                                 </div>
                             </div>
-                            <div className="mt-6 flex justify-between">
-                                {/* Tombol Reset Config Baru */}
-                                <button onClick={handleResetConfig} className="text-xs text-red-500 underline">Reset ke Config Baru</button>
-                                <div className="space-x-2">
-                                    <button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
-                                    <button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Simpan</button>
-                                </div>
+                            <div className="mt-6 flex justify-end space-x-2">
+                                <button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
+                                <button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Simpan</button>
                             </div>
                         </div>
                     </div>
@@ -672,6 +674,7 @@
 
                                 {urlToShare && (
                                     <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border">
+                                        {/* Menggunakan Generator Client-Side QRious */}
                                         <QrCodeCanvas value={urlToShare} />
                                         <p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p>
                                     </div>

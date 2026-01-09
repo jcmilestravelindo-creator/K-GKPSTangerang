@@ -10,10 +10,10 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Library QR Code Generator (Stabil & Offline) -->
+    <!-- Library QR Code Generator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     
-    <!-- 2. FIREBASE ENGINE (Lengkap dengan Auth & Firestore) -->
+    <!-- 2. FIREBASE ENGINE -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script> 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -38,82 +38,29 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         
-        /* Modal Scrollbar */
         .modal-scroll::-webkit-scrollbar { width: 8px; }
         .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .modal-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
         
-        /* --- OPTIMASI KHUSUS CETAK (PRINT CSS) --- */
         @media print {
-            @page { 
-                size: A4; 
-                margin: 5mm; 
-            }
-            body { 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact; 
-                font-size: 11px; 
-                background-color: white;
-            }
-            
+            @page { size: A4; margin: 5mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11px; background-color: white; }
             .no-print, nav, button, .guidance-box { display: none !important; }
-            
-            main { 
-                width: 100%; 
-                max-width: none; 
-                padding: 0; 
-                margin: 0; 
-            }
-            
-            .print-header { 
-                padding: 10px !important; 
-                border-bottom-width: 2px !important; 
-            }
+            main { width: 100%; max-width: none; padding: 0; margin: 0; }
+            .print-header { padding: 10px !important; border-bottom-width: 2px !important; }
             .print-header h1 { font-size: 16px !important; margin-bottom: 2px; }
             .print-header h2 { font-size: 14px !important; }
             .print-header p { display: none; }
-
-            .print-grid-compact { 
-                display: grid; 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 8px !important; 
-                padding: 8px !important;
-            }
-            .print-input-compact {
-                border: none !important;
-                padding: 0 !important;
-                height: auto !important;
-                font-weight: bold;
-                font-size: 11px;
-            }
+            .print-grid-compact { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px !important; padding: 8px !important; }
+            .print-input-compact { border: none !important; padding: 0 !important; height: auto !important; font-weight: bold; font-size: 11px; }
             label { font-size: 9px !important; text-transform: uppercase; color: #666; }
-
             table { font-size: 10px !important; }
             th, td { padding: 4px 2px !important; }
             input[type="number"] { font-size: 10px !important; }
-
-            .print-signature-area { 
-                margin-top: 10px !important; 
-                padding: 10px !important; 
-                border-top: 1px solid #ccc;
-                page-break-inside: avoid; 
-            }
+            .print-signature-area { margin-top: 10px !important; padding: 10px !important; border-top: 1px solid #ccc; page-break-inside: avoid; }
             .print-signature-box { height: 40px !important; } 
-            .print-signature-input { 
-                padding-top: 5px !important; 
-                font-size: 12px !important;
-            }
-            
-            .print-security-footer {
-                display: block !important;
-                font-size: 9px !important;
-                text-align: center;
-                border: 1px solid #ddd;
-                padding: 4px;
-                margin-top: 8px;
-                page-break-inside: avoid;
-            }
-
+            .print-signature-input { padding-top: 5px !important; font-size: 12px !important; }
+            .print-security-footer { display: block !important; font-size: 9px !important; text-align: center; border: 1px solid #ddd; padding: 4px; margin-top: 8px; page-break-inside: avoid; }
             ::-webkit-scrollbar { display: none; }
         }
     </style>
@@ -151,18 +98,13 @@
         const Key = ({ className }) => <IconBase className={className}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></IconBase>;
         const Edit = ({ className }) => <IconBase className={className}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>;
 
-        // --- DATA KONSTAN ---
+        // --- DATA ---
         const DENOMINATIONS = [
-          { value: 100000, label: 'Rp 100.000' },
-          { value: 50000, label: 'Rp 50.000' },
-          { value: 20000, label: 'Rp 20.000' },
-          { value: 10000, label: 'Rp 10.000' },
-          { value: 5000, label: 'Rp 5.000' },
-          { value: 2000, label: 'Rp 2.000' },
-          { value: 1000, label: 'Rp 1.000' },
-          { value: 500, label: 'Koin/Lain' },
+          { value: 100000, label: 'Rp 100.000' }, { value: 50000, label: 'Rp 50.000' },
+          { value: 20000, label: 'Rp 20.000' }, { value: 10000, label: 'Rp 10.000' },
+          { value: 5000, label: 'Rp 5.000' }, { value: 2000, label: 'Rp 2.000' },
+          { value: 1000, label: 'Rp 1.000' }, { value: 500, label: 'Koin/Lain' },
         ];
-
         const KANTONG_LABELS = [
           { id: 'k1', name: 'Kantong 1', color: 'bg-blue-50 border-blue-200' },
           { id: 'k2', name: 'Kantong 2', color: 'bg-green-50 border-green-200' },
@@ -170,22 +112,15 @@
           { id: 'k4', name: 'Kantong 4', color: 'bg-purple-50 border-purple-200' },
           { id: 'k5', name: 'Kantong HBN', color: 'bg-orange-50 border-orange-200' },
         ];
-
-        const SECTORS = [
-            "Sektor I", "Sektor II", "Sektor III", "Sektor IV", "Sektor V", "Sektor VI",
-            "Sektor VII", "Sektor VIII", "Sektor IX", "Sektor X", "Sektor XI", "Sektor XII"
-        ];
-
+        const SECTORS = ["Sektor I", "Sektor II", "Sektor III", "Sektor IV", "Sektor V", "Sektor VI", "Sektor VII", "Sektor VIII", "Sektor IX", "Sektor X", "Sektor XI", "Sektor XII"];
         const formatRupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
-        // --- KOMPONEN GRAFIK SEDERHANA ---
+        // --- COMPONENTS ---
         const SimpleChart = ({ history }) => {
           if (!history || history.length === 0) return <div className="text-center text-gray-400 p-4">Belum ada data riwayat.</div>;
-          
           const data = history.slice(0, 5).reverse();
           const maxVal = Math.max(...data.map(d => d.total));
           const chartHeight = 160; 
-
           return (
             <div className="w-full p-4 overflow-x-auto">
               <div className="flex items-end justify-around space-x-4 h-64 border-l border-b border-gray-300 pb-2">
@@ -193,15 +128,9 @@
                   const height = maxVal > 0 ? (item.total / maxVal) * chartHeight : 0;
                   return (
                     <div key={idx} className="flex flex-col items-center group relative w-24">
-                      <div className="absolute bottom-full mb-2 w-full text-center z-10">
-                        <span className="inline-block px-1 bg-white/80 rounded text-[10px] sm:text-xs font-bold text-gray-800 whitespace-nowrap shadow-sm">
-                            {formatRupiah(item.total)}
-                        </span>
-                      </div>
+                      <div className="absolute bottom-full mb-2 w-full text-center z-10"><span className="inline-block px-1 bg-white/80 rounded text-[10px] sm:text-xs font-bold text-gray-800 whitespace-nowrap shadow-sm">{formatRupiah(item.total)}</span></div>
                       <div className="w-full bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-all duration-500" style={{ height: `${height}px` }}></div>
-                      <div className="text-[10px] text-gray-500 mt-2 text-center w-full font-medium">
-                        {new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                      </div>
+                      <div className="text-[10px] text-gray-500 mt-2 text-center w-full font-medium">{new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
                     </div>
                   );
                 })}
@@ -210,29 +139,16 @@
           );
         };
 
-        // --- KOMPONEN QR CODE CANVAS ---
         const QrCodeCanvas = ({ value }) => {
             const canvasRef = useRef(null);
-
             useEffect(() => {
                 if (canvasRef.current && value) {
-                    try {
-                        new QRious({
-                            element: canvasRef.current,
-                            value: value,
-                            size: 250, 
-                            level: 'H' 
-                        });
-                    } catch (e) {
-                        console.error("Gagal membuat QR:", e);
-                    }
+                    try { new QRious({ element: canvasRef.current, value: value, size: 250, level: 'H' }); } catch (e) { console.error("Gagal membuat QR:", e); }
                 }
             }, [value]);
-
             return <canvas ref={canvasRef} className="border shadow-sm rounded"/>;
         };
 
-        // --- CONFIG FIREBASE USER (HARDCODED) ---
         const DEFAULT_FIREBASE_CONFIG = JSON.stringify({
           apiKey: "AIzaSyDhSwLYn1MnqiQShoXtoyx99x6XbRo6i7E",
           authDomain: "kolektegkpstangerang.firebaseapp.com",
@@ -243,42 +159,19 @@
           measurementId: "G-6JHDXEJD3D"
         });
 
-        // --- STATE AWAL DEFAULT ---
         const INITIAL_STATE_TEMPLATE = {
-            metadata: {
-              tanggal: new Date().toISOString().split('T')[0],
-              minggu: '',
-              sektor: 'Sektor I', 
-              pengkhotbah: '',
-              liturgis: '',
-              jenisIbadah: 'Minggu Pagi',
-            },
+            metadata: { tanggal: new Date().toISOString().split('T')[0], minggu: '', sektor: 'Sektor I', pengkhotbah: '', liturgis: '', jenisIbadah: 'Minggu Pagi', },
             kehadiran: { pria: 0, wanita: 0, anak: 0 },
-            uang: KANTONG_LABELS.reduce((acc, k) => {
-              acc[k.id] = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {});
-              return acc;
-            }, {}),
-            tandaTangan: {
-              penghitung1: '', sign_penghitung1: '',
-              penghitung2: '', sign_penghitung2: '',
-              bendahara: '', sign_bendahara: '',
-            }
+            uang: KANTONG_LABELS.reduce((acc, k) => { acc[k.id] = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {}); return acc; }, {}),
+            tandaTangan: { penghitung1: '', sign_penghitung1: '', penghitung2: '', sign_penghitung2: '', bendahara: '', sign_bendahara: '', }
         };
 
-        // --- FUNGSI MERGE DATA YANG AMAN (PENTING AGAR TIDAK CRASH) ---
         const validateAndFixData = (data) => {
             if (!data) return INITIAL_STATE_TEMPLATE;
-            
-            // Perbaiki jika uang/kantong hilang (biasanya terjadi jika doc baru dibuat di firebase tapi kosong)
             const safeUang = { ...INITIAL_STATE_TEMPLATE.uang };
             if (data.uang) {
-                Object.keys(safeUang).forEach(key => {
-                    if (data.uang[key]) {
-                        safeUang[key] = { ...safeUang[key], ...data.uang[key] };
-                    }
-                });
+                Object.keys(safeUang).forEach(key => { if (data.uang[key]) safeUang[key] = { ...safeUang[key], ...data.uang[key] }; });
             }
-
             return {
                 metadata: { ...INITIAL_STATE_TEMPLATE.metadata, ...data.metadata },
                 kehadiran: { ...INITIAL_STATE_TEMPLATE.kehadiran, ...data.kehadiran },
@@ -287,7 +180,7 @@
             };
         };
 
-        // --- KOMPONEN APLIKASI UTAMA ---
+        // --- APP COMPONENT ---
         function App() {
           const [data, setData] = useState(() => {
             const saved = localStorage.getItem('gkps_kolekte_data');
@@ -299,9 +192,7 @@
             return savedHist ? JSON.parse(savedHist) : [];
           });
 
-          const [appPin, setAppPin] = useState(() => {
-              return localStorage.getItem('gkps_app_pin') || '123456';
-          });
+          const [appPin, setAppPin] = useState(() => localStorage.getItem('gkps_app_pin') || '123456');
 
           const [fbConfigRaw, setFbConfigRaw] = useState(() => localStorage.getItem('gkps_fb_config') || DEFAULT_FIREBASE_CONFIG);
           const [db, setDb] = useState(null);
@@ -309,14 +200,13 @@
           const [syncStatus, setSyncStatus] = useState('offline'); 
           const [lastErrorMessage, setLastErrorMessage] = useState(''); 
           const [showDbModal, setShowDbModal] = useState(false);
-          const lastEditTime = useRef(0); // TIMESTAMP TERAKHIR EDIT LOKAL
+          const lastEditTime = useRef(0);
 
           const [lastSaved, setLastSaved] = useState(null);
           const [showHistory, setShowHistory] = useState(false);
           const [showHelp, setShowHelp] = useState(false);
           const [showPinModal, setShowPinModal] = useState(false); 
           const [showShareModal, setShowShareModal] = useState(false); 
-          
           const [urlToShare, setUrlToShare] = useState('https://k-gkps-tangerang.vercel.app/');
           const [viewData, setViewData] = useState(null);
           const [selectedIds, setSelectedIds] = useState(new Set()); 
@@ -328,14 +218,9 @@
               if (fbConfigRaw) {
                   try {
                       const config = JSON.parse(fbConfigRaw);
-                      if (!firebase.apps.length) {
-                          firebase.initializeApp(config);
-                      } else {
-                          firebase.app(); 
-                      }
-                      const firestore = firebase.firestore();
-                      setDb(firestore);
-                      
+                      if (!firebase.apps.length) firebase.initializeApp(config);
+                      else firebase.app(); 
+                      setDb(firebase.firestore());
                       const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
                           if (user) {
                               setAuthUser(user);
@@ -356,107 +241,88 @@
               }
           }, [fbConfigRaw]);
 
-          // REALTIME SYNC (DENGAN LOGIKA "JANGAN GANGGU")
+          // REALTIME SYNC: ACTIVE DATA
           useEffect(() => {
               if (!db || !authUser) return;
-
               const docId = `${data.metadata.tanggal}_${data.metadata.jenisIbadah.replace(/\s+/g, '_')}`;
               const docRef = db.collection('gkps_transactions').doc(docId);
 
               const unsubscribe = docRef.onSnapshot((doc) => {
                   setSyncStatus('connected');
                   setLastErrorMessage('');
-                  const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
-                  if (doc.exists && source === "Server") {
-                      // CEK APAKAH USER BARU SAJA MENGETIK (DALAM 10 DETIK TERAKHIR)
-                      // Jika ya, abaikan update server sementara agar tidak menimpa ketikan user
-                      if (Date.now() - lastEditTime.current < 10000) {
-                          console.log("Update server diabaikan: User sedang aktif mengetik.");
-                          return;
-                      }
-
+                  if (doc.exists && doc.metadata.hasPendingWrites === false) {
+                      if (Date.now() - lastEditTime.current < 10000) return; // Prevent overwriting while typing
                       const remoteData = doc.data();
                       const safeData = validateAndFixData(remoteData);
-                      
-                      if (JSON.stringify(safeData) !== JSON.stringify(data)) {
-                          setData(safeData);
-                      }
+                      if (JSON.stringify(safeData) !== JSON.stringify(data)) setData(safeData);
                   }
-              }, (error) => {
-                  console.error(error);
-                  setSyncStatus('error');
-              });
+              }, (error) => { console.error(error); setSyncStatus('error'); });
 
               const saveDataToServer = setTimeout(() => {
-                  if (authUser) {
-                      docRef.set(data, { merge: true })
-                          .then(() => setSyncStatus('connected'))
-                          .catch((e) => setSyncStatus('error'));
-                  }
+                  if (authUser) docRef.set(data, { merge: true }).then(() => setSyncStatus('connected')).catch((e) => setSyncStatus('error'));
               }, 2000);
-
-              return () => {
-                  unsubscribe();
-                  clearTimeout(saveDataToServer);
-              };
+              return () => { unsubscribe(); clearTimeout(saveDataToServer); };
           }, [data, db, authUser]);
 
+          // REALTIME SYNC: HISTORY ARCHIVE
           useEffect(() => {
-            localStorage.setItem('gkps_kolekte_data', JSON.stringify(data));
-            setLastSaved(new Date().toLocaleTimeString('id-ID'));
-          }, [data]);
+              if (!db || !authUser) return;
+              const historyRef = db.collection('gkps_data').doc('history_archive');
+              const unsubscribe = historyRef.onSnapshot((doc) => {
+                  if (doc.exists) {
+                      const remoteHistory = doc.data().entries || [];
+                      if (JSON.stringify(remoteHistory) !== JSON.stringify(history)) {
+                          setHistory(remoteHistory);
+                          console.log("Riwayat disinkronkan dari server");
+                      }
+                  }
+              }, (error) => console.error("History Sync Error:", error));
+              return () => unsubscribe();
+          }, [db, authUser]); // Dependensi tanpa 'history' untuk mencegah loop
 
-          useEffect(() => {
-            localStorage.setItem('gkps_kolekte_history', JSON.stringify(history));
-          }, [history]);
+          // HELPER UNTUK UPDATE CLOUD HISTORY
+          const updateCloudHistory = (newHistory) => {
+              if (db && authUser) {
+                  db.collection('gkps_data').doc('history_archive').set({ entries: newHistory })
+                    .then(() => console.log("Riwayat tersimpan di Cloud"))
+                    .catch(e => console.error("Gagal simpan riwayat Cloud:", e));
+              }
+          };
 
-          useEffect(() => {
-            localStorage.setItem('gkps_app_pin', appPin);
-          }, [appPin]);
+          // STORAGE EFFECTS
+          useEffect(() => { localStorage.setItem('gkps_kolekte_data', JSON.stringify(data)); setLastSaved(new Date().toLocaleTimeString('id-ID')); }, [data]);
+          useEffect(() => { localStorage.setItem('gkps_kolekte_history', JSON.stringify(history)); }, [history]);
+          useEffect(() => { localStorage.setItem('gkps_app_pin', appPin); }, [appPin]);
 
+          // HANDLERS
           const handleMetaChange = (e) => setData({ ...data, metadata: { ...data.metadata, [e.target.name]: e.target.value } });
           
-          // --- PERBAIKAN: IZINKAN STRING KOSONG SEMENTARA PADA INPUT ---
           const handleAttChange = (e) => {
-              lastEditTime.current = Date.now(); // TANDAI USER SEDANG MENGETIK
+              lastEditTime.current = Date.now();
               const val = e.target.value;
-              // Izinkan nilai string kosong "" agar bisa dihapus total oleh user
               const valToStore = val === '' ? '' : parseInt(val);
               setData(prev => ({ ...prev, kehadiran: { ...prev.kehadiran, [e.target.name]: valToStore } }));
           };
 
           const handleSignChange = (e) => {
-              lastEditTime.current = Date.now(); // TANDAI USER SEDANG MENGETIK
+              lastEditTime.current = Date.now();
               setData({ ...data, tandaTangan: { ...data.tandaTangan, [e.target.name]: e.target.value } });
           };
           
           const handleMoneyChange = (kantongId, denomValue, qty) => {
-            lastEditTime.current = Date.now(); // TANDAI USER SEDANG MENGETIK
-            // Izinkan nilai string kosong "" agar bisa dihapus total oleh user
+            lastEditTime.current = Date.now();
             const val = qty === '' ? '' : parseInt(qty);
-            
             setData(prev => {
                 const prevUang = prev.uang || {};
                 const prevKantong = prevUang[kantongId] || {};
-                return {
-                    ...prev,
-                    uang: {
-                        ...prevUang,
-                        [kantongId]: {
-                            ...prevKantong,
-                            [denomValue]: val
-                        }
-                    }
-                };
+                return { ...prev, uang: { ...prevUang, [kantongId]: { ...prevKantong, [denomValue]: val } } };
             });
           };
 
-          // Update Kalkulasi agar bisa menghitung string kosong sebagai 0
           const calculateBagTotal = (kantongId, sourceData = data) => {
             if (!sourceData.uang || !sourceData.uang[kantongId]) return 0;
             return DENOMINATIONS.reduce((total, d) => {
                 const rawVal = sourceData.uang[kantongId][d.value];
-                // Konversi string kosong/undefined jadi 0 untuk hitungan
                 const val = (rawVal === '' || rawVal === undefined) ? 0 : rawVal;
                 return total + (val * d.value);
             }, 0);
@@ -470,11 +336,8 @@
              const blob = new Blob([JSON.stringify({ data, history, backupDate: new Date().toISOString(), appName: 'GKPS Kolekte App' }, null, 2)], { type: "application/json" });
              const url = URL.createObjectURL(blob);
              const link = document.createElement("a");
-             link.href = url;
-             link.download = `GKPS_Backup_${new Date().toISOString().split('T')[0]}.json`;
-             document.body.appendChild(link);
-             link.click();
-             document.body.removeChild(link);
+             link.href = url; link.download = `GKPS_Backup_${new Date().toISOString().split('T')[0]}.json`;
+             document.body.appendChild(link); link.click(); document.body.removeChild(link);
           };
 
           const handleImportClick = () => fileInputRef.current.click();
@@ -486,9 +349,11 @@
                 try {
                     const parsed = JSON.parse(event.target.result);
                     if (parsed.appName === 'GKPS Kolekte App') {
-                        if (confirm(`Restore data dari tanggal ${new Date(parsed.backupDate).toLocaleDateString()}?`)) {
+                        if (confirm(`Restore data?`)) {
                             setData(validateAndFixData(parsed.data));
-                            setHistory(parsed.history);
+                            const newHistory = parsed.history;
+                            setHistory(newHistory);
+                            updateCloudHistory(newHistory); // Sync to Cloud
                             alert("Berhasil!");
                         }
                     } else alert("File tidak valid!");
@@ -499,7 +364,17 @@
           };
 
           const resetData = () => { if (confirm('Reset form?')) { setData(INITIAL_STATE_TEMPLATE); localStorage.removeItem('gkps_kolekte_data'); } };
-          const saveToHistory = () => { if (confirm('Simpan ke Riwayat?')) { setHistory([{ id: Date.now(), date: data.metadata.tanggal, jenis: data.metadata.jenisIbadah, total: calculateGrandTotal(data), details: data }, ...history]); alert('Tersimpan!'); } };
+          
+          const saveToHistory = () => { 
+              if (confirm('Simpan ke Riwayat?')) { 
+                  const newEntry = { id: Date.now(), date: data.metadata.tanggal, jenis: data.metadata.jenisIbadah, total: calculateGrandTotal(data), details: data };
+                  const newHistory = [newEntry, ...history];
+                  setHistory(newHistory); 
+                  updateCloudHistory(newHistory); // Sync to Cloud
+                  alert('Tersimpan!'); 
+              } 
+          };
+          
           const handlePrint = () => window.print();
 
           const toggleSelectId = (id) => {
@@ -515,27 +390,26 @@
 
           const deleteSelected = () => {
             if (selectedIds.size === 0) return;
-            const input = prompt("KEAMANAN: Masukkan PIN Bendahara untuk menghapus data terpilih:");
-            if (input !== appPin) { alert("Akses Ditolak! PIN Salah."); return; }
-            if(confirm(`Yakin ingin menghapus ${selectedIds.size} data terpilih secara permanen?`)) {
+            const input = prompt("KEAMANAN: Masukkan PIN Bendahara:");
+            if (input !== appPin) { alert("Akses Ditolak!"); return; }
+            if(confirm(`Yakin hapus ${selectedIds.size} data?`)) {
                 const newHistory = history.filter(h => !selectedIds.has(h.id));
                 setHistory(newHistory);
                 setSelectedIds(new Set());
-                alert("Data terpilih berhasil dihapus.");
+                updateCloudHistory(newHistory); // Sync to Cloud
+                alert("Data dihapus.");
             }
           };
 
           const handleEditHistory = (item) => {
-              const input = prompt("KEAMANAN: Masukkan PIN Bendahara untuk mengedit data ini:");
-              if (input !== appPin) {
-                  alert("PIN Salah! Akses ditolak.");
-                  return;
-              }
-              if (confirm("Data ini akan dimuat kembali ke formulir utama untuk diubah, dan akan DIHAPUS dari daftar riwayat sementara agar tidak ganda.\n\nLanjutkan?")) {
+              const input = prompt("KEAMANAN: Masukkan PIN Bendahara:");
+              if (input !== appPin) { alert("Akses Ditolak!"); return; }
+              if (confirm("Data akan dimuat kembali ke formulir dan dihapus dari riwayat sementara.")) {
                   setData(validateAndFixData(item.details));
                   const newHistory = history.filter(h => h.id !== item.id);
                   setHistory(newHistory);
-                  alert("Data dimuat. Silakan ubah & simpan lagi.");
+                  updateCloudHistory(newHistory); // Sync to Cloud
+                  alert("Data dimuat.");
                   setShowHistory(false);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
               }
@@ -544,7 +418,7 @@
           const handleChangePin = () => {
               if (pinForm.old !== appPin) { alert("PIN Lama salah!"); return; }
               if (pinForm.new.length < 6) { alert("PIN Baru minimal 6 angka!"); return; }
-              if (pinForm.new !== pinForm.confirm) { alert("Konfirmasi PIN Baru tidak cocok!"); return; }
+              if (pinForm.new !== pinForm.confirm) { alert("Konfirmasi tidak cocok!"); return; }
               setAppPin(pinForm.new);
               alert("PIN Berhasil diubah!");
               setPinForm({ old: '', new: '', confirm: '' });
@@ -552,29 +426,26 @@
           };
 
           const handleForgotPin = () => {
-              const input = prompt("Masukkan Kode Master Pemulihan (Hubungi Administrator/Programmer):");
+              const input = prompt("Kode Master Pemulihan:");
               if (input === 'GKPS2025') { 
                   setAppPin('123456');
-                  localStorage.setItem('gkps_app_pin', '123456');
-                  alert("PIN berhasil di-reset ke default: 123456");
+                  alert("PIN di-reset ke: 123456");
                   setShowPinModal(false);
                   setPinForm({ old: '', new: '', confirm: '' });
-              } else {
-                  alert("Kode Master salah!");
-              }
+              } else { alert("Kode Master salah!"); }
           };
 
           const handleSaveConfig = () => {
               localStorage.setItem('gkps_fb_config', fbConfigRaw);
-              alert("Konfigurasi disimpan. Silakan refresh halaman.");
+              alert("Konfigurasi disimpan. Silakan refresh.");
               window.location.reload();
           };
 
           const handleResetConfig = () => {
-              if(confirm("Yakin ingin mereset konfigurasi Database ke kode default?")) {
+              if(confirm("Reset konfigurasi Database?")) {
                   localStorage.removeItem('gkps_fb_config');
                   setFbConfigRaw(DEFAULT_FIREBASE_CONFIG);
-                  alert("Konfigurasi di-reset. Halaman akan dimuat ulang.");
+                  alert("Konfigurasi di-reset. Refreshing...");
                   window.location.reload();
               }
           };
@@ -589,28 +460,17 @@
                     <div className="flex items-center space-x-3"><Calculator className="h-8 w-8" /><span className="font-bold text-xl tracking-tight hidden sm:block">GKPS App</span></div>
                     <div className="flex items-center space-x-2">
                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
-                       
-                       {/* INDIKATOR & TOMBOL SINKRONISASI */}
-                       <button 
-                           onClick={() => setShowDbModal(true)} 
-                           className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
-                           title={syncStatus === 'connected' ? 'Online & Sinkron' : 'Mode Offline / Konfigurasi Cloud'}
-                       >
-                           {syncStatus === 'connected' ? <Cloud className="h-5 w-5"/> : <CloudOff className="h-5 w-5"/>}
-                       </button>
-
+                       <button onClick={() => setShowDbModal(true)} className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-600'}`} title="Cloud"><Cloud className="h-5 w-5"/></button>
                        <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan"><HelpCircle className="h-5 w-5"/></button>
-                       <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share via QR Code"><QrCode className="h-5 w-5"/></button>
-                       <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN Bendahara"><Lock className="h-5 w-5 text-yellow-300"/></button>
+                       <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share QR"><QrCode className="h-5 w-5"/></button>
+                       <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN"><Lock className="h-5 w-5 text-yellow-300"/></button>
                        <button onClick={() => setShowHistory(!showHistory)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Riwayat"><BarChart2 className="h-5 w-5"/></button>
                        <button onClick={saveToHistory} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan Arsip"><Save className="h-5 w-5"/></button>
-                       
                        <div className="hidden md:flex bg-blue-900 rounded p-1 space-x-1">
                            <button onClick={handleExport} className="p-1.5 hover:bg-blue-800 rounded transition" title="Backup"><Download className="h-4 w-4 text-green-300"/></button>
                            <button onClick={handleImportClick} className="p-1.5 hover:bg-blue-800 rounded transition" title="Restore"><Upload className="h-4 w-4 text-yellow-300"/></button>
                        </div>
-
-                       <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset Form"><Trash2 className="h-5 w-5"/></button>
+                       <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset"><Trash2 className="h-5 w-5"/></button>
                        <button onClick={handlePrint} className="flex items-center space-x-2 px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold"><Printer className="h-5 w-5"/><span>Cetak</span></button>
                     </div>
                   </div>
@@ -618,98 +478,36 @@
               </nav>
 
               <main className="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8 print:max-w-full print:p-0">
-                
                 {showDbModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
                         <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col p-6">
-                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
-                                <Settings className="w-5 h-5 mr-2 text-blue-600"/> Pengaturan Database (Cloud)
-                            </h3>
-                            <div className="space-y-3">
-                                <p className="text-sm text-gray-600">Konfigurasi telah ditanamkan (Hardcoded). Jika status masih merah, pastikan "Anonymous Auth" aktif di Firebase Console.</p>
-                                <textarea 
-                                    value={fbConfigRaw}
-                                    onChange={(e) => setFbConfigRaw(e.target.value)}
-                                    rows="6"
-                                    className="w-full border rounded p-2 text-xs font-mono bg-gray-50"
-                                    placeholder='Contoh: {"apiKey": "AIzaSy...", ...}'
-                                />
-                                <div className={`text-xs p-2 rounded ${syncStatus === 'error' ? 'bg-red-100 text-red-800' : 'bg-blue-50 text-blue-600'}`}>
-                                    <strong>Status:</strong> {syncStatus === 'connected' ? 'Terhubung (Online)' : (syncStatus === 'error' ? 'Gagal Terhubung' : 'Offline')}<br/>
-                                    {lastErrorMessage && <span className="font-bold mt-1 block">Error: {lastErrorMessage}</span>}
-                                </div>
-                            </div>
-                            <div className="mt-6 flex justify-between">
-                                <button onClick={handleResetConfig} className="text-xs text-red-500 underline">Reset ke Config Baru</button>
-                                <div className="space-x-2">
-                                    <button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
-                                    <button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Simpan</button>
-                                </div>
-                            </div>
+                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center"><Settings className="w-5 h-5 mr-2 text-blue-600"/> Pengaturan Database</h3>
+                            <textarea value={fbConfigRaw} onChange={(e) => setFbConfigRaw(e.target.value)} rows="6" className="w-full border rounded p-2 text-xs font-mono bg-gray-50"/>
+                            <div className="mt-4 flex justify-between"><button onClick={handleResetConfig} className="text-red-500 text-xs">Reset Config</button><div className="space-x-2"><button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded">Tutup</button><button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded">Simpan</button></div></div>
                         </div>
                     </div>
                 )}
 
-                {/* MODAL GANTI PIN */}
                 {showPinModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
                         <div className="bg-white rounded-lg w-full max-w-sm shadow-2xl flex flex-col p-6">
-                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
-                                <Lock className="w-5 h-5 mr-2 text-blue-600"/> Ganti PIN Bendahara
-                            </h3>
+                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center"><Lock className="w-5 h-5 mr-2 text-blue-600"/> Ganti PIN</h3>
                             <div className="space-y-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">PIN Lama</label>
-                                    <input type="password" value={pinForm.old} onChange={(e) => setPinForm({...pinForm, old: e.target.value})} className="w-full border rounded p-2" placeholder="Masukkan PIN lama" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">PIN Baru</label>
-                                    <input type="password" value={pinForm.new} onChange={(e) => setPinForm({...pinForm, new: e.target.value})} className="w-full border rounded p-2" placeholder="6 digit angka" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi PIN Baru</label>
-                                    <input type="password" value={pinForm.confirm} onChange={(e) => setPinForm({...pinForm, confirm: e.target.value})} className="w-full border rounded p-2" placeholder="Ulangi PIN baru" />
-                                </div>
+                                <input type="password" value={pinForm.old} onChange={(e) => setPinForm({...pinForm, old: e.target.value})} className="w-full border rounded p-2" placeholder="PIN Lama" />
+                                <input type="password" value={pinForm.new} onChange={(e) => setPinForm({...pinForm, new: e.target.value})} className="w-full border rounded p-2" placeholder="PIN Baru (6 digit)" />
+                                <input type="password" value={pinForm.confirm} onChange={(e) => setPinForm({...pinForm, confirm: e.target.value})} className="w-full border rounded p-2" placeholder="Konfirmasi PIN Baru" />
                             </div>
-                            <div className="mt-6 flex justify-between">
-                                <button onClick={handleForgotPin} className="text-xs text-red-500 hover:underline flex items-center">
-                                    <Key className="w-3 h-3 mr-1"/> Lupa PIN Lama?
-                                </button>
-                                <div className="flex space-x-2">
-                                    <button onClick={() => {setShowPinModal(false); setPinForm({old:'', new:'', confirm:''});}} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Batal</button>
-                                    <button onClick={handleChangePin} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Simpan PIN</button>
-                                </div>
-                            </div>
+                            <div className="mt-6 flex justify-between"><button onClick={handleForgotPin} className="text-xs text-red-500 hover:underline">Lupa PIN?</button><div className="space-x-2"><button onClick={() => setShowPinModal(false)} className="px-4 py-2 bg-gray-200 rounded">Batal</button><button onClick={handleChangePin} className="px-4 py-2 bg-blue-600 text-white rounded">Simpan</button></div></div>
                         </div>
                     </div>
                 )}
 
-                {/* MODAL SHARE QR */}
                 {showShareModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
                         <div className="bg-white rounded-lg w-full max-w-md shadow-2xl flex flex-col p-6">
-                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
-                                <QrCode className="w-5 h-5 mr-2 text-blue-600"/> Bagikan Aplikasi via QR
-                            </h3>
-                            <div className="space-y-4">
-                                <p className="text-sm text-gray-600">Scan QR Code ini untuk membuka Aplikasi Kolekte:</p>
-                                <div className="hidden">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Link File Aplikasi</label>
-                                    <input type="text" value={urlToShare} onChange={(e) => setUrlToShare(e.target.value)} className="w-full border rounded p-2" placeholder="https://..." />
-                                </div>
-                                {urlToShare && (
-                                    <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border">
-                                        <QrCodeCanvas value={urlToShare} />
-                                        <p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p>
-                                    </div>
-                                )}
-                                <div className="bg-blue-50 p-2 rounded border border-blue-200 text-xs text-blue-800">
-                                    <strong>Info:</strong> Link ini mengarah ke aplikasi yang sudah di-hosting di Vercel. Pastikan HP terhubung ke internet saat membuka.
-                                </div>
-                            </div>
-                            <div className="mt-6 flex justify-end">
-                                <button onClick={() => setShowShareModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
-                            </div>
+                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center"><QrCode className="w-5 h-5 mr-2 text-blue-600"/> Share QR</h3>
+                            <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border"><QrCodeCanvas value={urlToShare} /><p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p></div>
+                            <div className="mt-6 flex justify-end"><button onClick={() => setShowShareModal(false)} className="px-4 py-2 bg-gray-200 rounded">Tutup</button></div>
                         </div>
                     </div>
                 )}
@@ -717,169 +515,80 @@
                 {showHistory && (
                     <div className="mb-6 bg-white shadow-xl rounded-lg p-6 print:hidden border border-blue-200">
                         <div className="flex justify-between items-center mb-4 border-b pb-2">
-                            <h3 className="font-bold text-lg text-gray-800 flex items-center">
-                                <History className="inline w-5 h-5 mr-2 text-blue-600"/> Riwayat
-                            </h3>
-                            <div className="flex space-x-2 items-center">
-                                {selectedIds.size > 0 && (
-                                    <button onClick={deleteSelected} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-md hover:bg-red-200 font-bold transition flex items-center border border-red-200">
-                                        <Trash2 className="w-3 h-3 mr-1"/> Hapus Terpilih ({selectedIds.size})
-                                    </button>
-                                )}
-                            </div>
+                            <h3 className="font-bold text-lg text-gray-800 flex items-center"><History className="inline w-5 h-5 mr-2 text-blue-600"/> Riwayat</h3>
+                            {selectedIds.size > 0 && (<button onClick={deleteSelected} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-md font-bold flex items-center"><Trash2 className="w-3 h-3 mr-1"/> Hapus ({selectedIds.size})</button>)}
                         </div>
                         <SimpleChart history={history} />
                         <div className="overflow-auto max-h-60 mt-4 border rounded shadow-sm">
                              <table className="min-w-full text-sm">
-                                <thead className="bg-gray-100 text-gray-700 sticky top-0">
-                                    <tr>
-                                        <th className="p-2 text-center w-10 border-b">
-                                            <input type="checkbox" checked={history.length > 0 && selectedIds.size === history.length} onChange={toggleSelectAll} className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                                        </th>
-                                        <th className="p-2 text-left border-b">Tanggal</th>
-                                        <th className="p-2 border-b">Jenis</th>
-                                        <th className="p-2 text-right border-b">Total</th>
-                                        <th className="p-2 text-center border-b">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {history.length === 0 ? (
-                                        <tr><td colSpan="5" className="p-4 text-center text-gray-400 italic">Belum ada data riwayat.</td></tr>
-                                    ) : (
-                                        history.map(h => (
-                                            <tr key={h.id} className={`border-b hover:bg-gray-50 transition ${selectedIds.has(h.id) ? 'bg-blue-50' : ''}`}>
-                                                <td className="p-2 text-center">
-                                                    <input type="checkbox" checked={selectedIds.has(h.id)} onChange={() => toggleSelectId(h.id)} className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                                                </td>
-                                                <td className="p-2 text-gray-700 font-medium">{new Date(h.date).toLocaleDateString('id-ID')}</td>
-                                                <td className="p-2 text-gray-600">{h.jenis}</td>
-                                                <td className="p-2 text-right font-bold text-gray-800">{formatRupiah(h.total)}</td>
-                                                <td className="p-2 text-center flex justify-center space-x-1">
-                                                    <button onClick={()=>setViewData(h.details)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-100 transition" title="Lihat Detail"><Eye className="w-4 h-4"/></button>
-                                                    <button onClick={() => handleEditHistory(h)} className="text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-100 transition" title="Edit Data (PIN)"><Edit className="w-4 h-4"/></button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
+                                <thead className="bg-gray-100 text-gray-700 sticky top-0"><tr><th className="p-2 w-10"><input type="checkbox" checked={history.length > 0 && selectedIds.size === history.length} onChange={toggleSelectAll} /></th><th className="p-2 text-left">Tanggal</th><th className="p-2">Jenis</th><th className="p-2 text-right">Total</th><th className="p-2 text-center">Aksi</th></tr></thead>
+                                <tbody>{history.map(h => (<tr key={h.id} className="border-b"><td className="p-2 text-center"><input type="checkbox" checked={selectedIds.has(h.id)} onChange={() => toggleSelectId(h.id)} /></td><td className="p-2">{new Date(h.date).toLocaleDateString('id-ID')}</td><td className="p-2">{h.jenis}</td><td className="p-2 text-right font-bold">{formatRupiah(h.total)}</td><td className="p-2 text-center flex justify-center space-x-1"><button onClick={()=>setViewData(h.details)} className="text-blue-600 p-1"><Eye className="w-4 h-4"/></button><button onClick={() => handleEditHistory(h)} className="text-yellow-600 p-1"><Edit className="w-4 h-4"/></button></td></tr>))}</tbody>
                              </table>
                         </div>
-                        <div className="mt-2 text-xs text-gray-400 italic text-right">* Centang kotak untuk memilih data yang ingin dihapus. Perlu PIN Bendahara.</div>
                     </div>
                 )}
 
-                {/* --- FORMULIR UTAMA --- */}
+                {/* FORMULIR UTAMA */}
                 <div className="bg-white shadow-xl rounded-lg overflow-hidden print:shadow-none print:rounded-none">
                     <div className="border-b-4 border-blue-800 p-6 text-center print-header">
                         <h1 className="text-2xl font-bold uppercase">Formulir Setoran Kolekte</h1>
                         <h2 className="text-xl font-semibold text-blue-800">GKPS TANGERANG</h2>
-                        <p className="text-sm text-gray-500 mt-1">Isi data di bawah. Perhitungan otomatis.</p>
                     </div>
 
                     <div className="p-6 bg-gray-50 border-b border-gray-200 print-grid-compact print:bg-white">
                         <div className="space-y-4 print:space-y-1">
                             <div><label className="block text-sm font-medium">Tanggal</label><input type="date" name="tanggal" value={data.metadata.tanggal} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
-                            
                             <div className="grid grid-cols-2 gap-4 print:gap-2">
-                                <div><label className="block text-sm font-medium">Sektor Pelayan</label>
-                                    <select name="sektor" value={data.metadata.sektor} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact">
-                                        {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </select>
-                                </div>
-                                <div><label className="block text-sm font-medium">Jenis Ibadah</label>
-                                    <select name="jenisIbadah" value={data.metadata.jenisIbadah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact">
-                                        <option>Minggu Pagi</option><option>Minggu Siang</option><option>Minggu Sore</option><option>Ibadah Sektor</option><option>Partonggoan</option>
-                                    </select>
-                                </div>
+                                <div><label className="block text-sm font-medium">Sektor</label><select name="sektor" value={data.metadata.sektor} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact">{SECTORS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+                                <div><label className="block text-sm font-medium">Jenis Ibadah</label><select name="jenisIbadah" value={data.metadata.jenisIbadah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact"><option>Minggu Pagi</option><option>Minggu Siang</option><option>Minggu Sore</option><option>Ibadah Sektor</option><option>Partonggoan</option></select></div>
                             </div>
-                            
                             <div><label className="block text-sm font-medium">Minggu Ke / Nama</label><input type="text" name="minggu" value={data.metadata.minggu} onChange={handleMetaChange} placeholder="Cth: Exaudi" className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
                         </div>
-
                         <div className="space-y-4 print:space-y-1">
-                            <div><label className="block text-sm font-medium">Pengkhotbah / Pelayan</label><input type="text" name="pengkhotbah" value={data.metadata.pengkhotbah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
-                            
+                            <div><label className="block text-sm font-medium">Pengkhotbah</label><input type="text" name="pengkhotbah" value={data.metadata.pengkhotbah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">Kehadiran (Jiwa)</label>
+                                <label className="block text-sm font-medium mb-1">Kehadiran</label>
                                 <div className="grid grid-cols-3 gap-2">
-                                    <div className="text-center"><span className="text-xs text-gray-500 block">Pria</span><input type="number" name="pria" value={data.kehadiran.pria} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                    <div className="text-center"><span className="text-xs text-gray-500 block">Wanita</span><input type="number" name="wanita" value={data.kehadiran.wanita} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                    <div className="text-center"><span className="text-xs text-gray-500 block">Anak</span><input type="number" name="anak" value={data.kehadiran.anak} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                    <div className="text-center"><span className="text-xs text-gray-500">Pria</span><input type="number" name="pria" value={data.kehadiran.pria === '' ? '' : data.kehadiran.pria} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                    <div className="text-center"><span className="text-xs text-gray-500">Wanita</span><input type="number" name="wanita" value={data.kehadiran.wanita === '' ? '' : data.kehadiran.wanita} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                    <div className="text-center"><span className="text-xs text-gray-500">Anak</span><input type="number" name="anak" value={data.kehadiran.anak === '' ? '' : data.kehadiran.anak} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
                                 </div>
                             </div>
-                            <div className="text-right text-xs font-bold text-gray-700 mt-1">Total: {data.kehadiran.pria + data.kehadiran.wanita + data.kehadiran.anak} Jiwa</div>
+                            <div className="text-right text-xs font-bold text-gray-700 mt-1">Total: {(data.kehadiran.pria||0) + (data.kehadiran.wanita||0) + (data.kehadiran.anak||0)} Jiwa</div>
                         </div>
                     </div>
 
                     <div className="p-6 print:p-2 border-b">
-                        <h3 className="text-lg font-bold mb-4 flex items-center print:hidden"><FileText className="w-5 h-5 mr-2"/> Rincian Perhitungan</h3>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-300 border">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="py-2 pl-2 text-left text-sm">Pecahan</th>
-                                        {KANTONG_LABELS.map(k => <th key={k.id} className={`px-2 py-2 text-center text-sm ${k.color}`}>{k.name}</th>)}
-                                    </tr>
-                                </thead>
+                                <thead className="bg-gray-50"><tr><th className="py-2 pl-2 text-left text-sm">Pecahan</th>{KANTONG_LABELS.map(k => <th key={k.id} className={`px-2 py-2 text-center text-sm ${k.color}`}>{k.name}</th>)}</tr></thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {DENOMINATIONS.map(d => (
                                         <tr key={d.value}>
                                             <td className="whitespace-nowrap py-1 pl-2 text-sm font-medium">{d.label}</td>
                                             {KANTONG_LABELS.map(k => (
                                                 <td key={`${k.id}-${d.value}`} className="px-1 py-1 text-center">
-                                                    <div className="flex justify-center items-center">
-                                                        <input type="number" min="0" placeholder="0" 
-                                                            value={data.uang[k.id][d.value] === '' ? '' : (data.uang[k.id][d.value] || '')} 
-                                                            onChange={e => handleMoneyChange(k.id, d.value, e.target.value)} 
-                                                            className="w-16 text-center border-gray-300 rounded text-sm print:w-full print:border-none print:bg-transparent print:p-0 print:text-right" 
-                                                        />
-                                                        <span className="text-xs text-gray-400 ml-1 print:hidden">lbr</span>
-                                                    </div>
+                                                    <input type="number" min="0" placeholder="0" value={data.uang[k.id][d.value] === '' ? '' : (data.uang[k.id][d.value] || '')} onChange={e => handleMoneyChange(k.id, d.value, e.target.value)} className="w-16 text-center border-gray-300 rounded text-sm print:w-full print:border-none print:bg-transparent print:p-0 print:text-right" />
                                                 </td>
                                             ))}
                                         </tr>
                                     ))}
-                                    <tr className="bg-gray-100 font-bold">
-                                        <td className="py-2 pl-2 text-sm">TOTAL</td>
-                                        {KANTONG_LABELS.map(k => <td key={`t-${k.id}`} className="px-2 py-2 text-right text-sm">{formatRupiah(calculateBagTotal(k.id))}</td>)}
-                                    </tr>
+                                    <tr className="bg-gray-100 font-bold"><td className="py-2 pl-2 text-sm">TOTAL</td>{KANTONG_LABELS.map(k => <td key={`t-${k.id}`} className="px-2 py-2 text-right text-sm">{formatRupiah(calculateBagTotal(k.id))}</td>)}</tr>
                                 </tbody>
                             </table>
                         </div>
                         <div className="mt-4 flex justify-end print:mt-2">
-                             <div className="bg-blue-900 text-white p-3 rounded shadow print:bg-white print:text-black print:border print:shadow-none print:w-full print:flex print:justify-between print:p-1">
-                                <span className="font-bold mr-4">TOTAL KESELURUHAN:</span>
-                                <span className="font-bold text-xl print:text-lg">{formatRupiah(calculateGrandTotal())}</span>
-                             </div>
+                             <div className="bg-blue-900 text-white p-3 rounded shadow print:bg-white print:text-black print:border print:shadow-none print:w-full print:flex print:justify-between print:p-1"><span className="font-bold mr-4">TOTAL KESELURUHAN:</span><span className="font-bold text-xl print:text-lg">{formatRupiah(calculateGrandTotal())}</span></div>
                         </div>
                     </div>
 
                     <div className="p-6 bg-gray-50 print-signature-area print:bg-white">
                         <h3 className="text-sm font-bold uppercase mb-4 print:mb-2">Pengesahan</h3>
                         <div className="grid grid-cols-3 gap-4 text-center">
-                            {[
-                                {role:'Penghitung 1', key:'penghitung1'}, 
-                                {role:'Penghitung 2', key:'penghitung2'}, 
-                                {role:'Bendahara', key:'bendahara'}
-                            ].map(signer => (
+                            {[{role:'Penghitung 1', key:'penghitung1'}, {role:'Penghitung 2', key:'penghitung2'}, {role:'Bendahara', key:'bendahara'}].map(signer => (
                                 <div key={signer.key} className="flex flex-col items-center">
-                                    <div className="h-24 w-full border-b border-gray-400 mb-2 relative print-signature-box">
-                                        <textarea 
-                                            name={`sign_${signer.key}`} 
-                                            placeholder="(Tanda Tangan)" 
-                                            value={data.tandaTangan[`sign_${signer.key}`]} 
-                                            onChange={handleSignChange} 
-                                            className="w-full h-full text-center align-bottom border-none bg-transparent resize-none pt-8 italic font-handwriting print-signature-input"
-                                        />
-                                    </div>
-                                    <input 
-                                        type="text" 
-                                        name={signer.key} 
-                                        placeholder={`Nama ${signer.role}`} 
-                                        value={data.tandaTangan[signer.key]} 
-                                        onChange={handleSignChange} 
-                                        className="text-center w-full bg-transparent border-none font-bold text-sm"
-                                    />
+                                    <div className="h-24 w-full border-b border-gray-400 mb-2 relative print-signature-box"><textarea name={`sign_${signer.key}`} placeholder="(Tanda Tangan)" value={data.tandaTangan[`sign_${signer.key}`]} onChange={handleSignChange} className="w-full h-full text-center align-bottom border-none bg-transparent resize-none pt-8 italic font-handwriting print-signature-input" /></div>
+                                    <input type="text" name={signer.key} placeholder={`Nama ${signer.role}`} value={data.tandaTangan[signer.key]} onChange={handleSignChange} className="text-center w-full bg-transparent border-none font-bold text-sm" />
                                     <label className="text-xs text-gray-500 mt-1">{signer.role}</label>
                                 </div>
                             ))}
@@ -887,136 +596,39 @@
                     </div>
                 </div>
 
-                <div className="hidden print:block print-security-footer">
-                    <strong>KEAMANAN DATA:</strong> Arsip digital telah dicadangkan. Dokumen ini sah sebagai bukti setoran fisik. 
-                    <br/><i>Dicetak pada: {new Date().toLocaleString('id-ID')}</i>
-                </div>
-
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-8 mt-4 print:hidden">
-                    <p className="text-sm text-blue-700 font-bold">Keamanan Data: Gunakan tombol Download/Upload di menu atas untuk Backup data.</p>
-                </div>
-
-                {viewData && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 print:hidden">
-                        <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
-                            <div className="p-4 border-b flex justify-between"><h3 className="font-bold">Detail (Read-Only)</h3><button onClick={()=>setViewData(null)}><X className="w-6 h-6"/></button></div>
-                            <div className="p-6 overflow-y-auto modal-scroll bg-gray-50">
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div className="bg-white p-4 rounded shadow">
-                                        <h4 className="font-bold border-b mb-2">Metadata</h4>
-                                        <p className="text-sm">Tanggal: <b>{viewData.metadata.tanggal}</b></p>
-                                        <p className="text-sm">Sektor: <b>{viewData.metadata.sektor}</b></p>
-                                        <p className="text-sm">Jenis: <b>{viewData.metadata.jenisIbadah}</b></p>
-                                        <p className="text-sm">Minggu: <b>{viewData.metadata.minggu}</b></p>
-                                    </div>
-                                    <div className="bg-white p-4 rounded shadow">
-                                        <h4 className="font-bold border-b mb-2">Total</h4>
-                                        <p className="text-2xl font-bold text-blue-800">{formatRupiah(calculateGrandTotal(viewData))}</p>
-                                        <p className="text-xs text-gray-500 mt-2">Disahkan oleh: {viewData.tandaTangan.bendahara}</p>
-                                    </div>
-                                </div>
-                                <div className="bg-white p-4 rounded shadow mt-4">
-                                    <h4 className="font-bold border-b mb-2">Rincian Perhitungan</h4>
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full text-sm border">
-                                            <thead className="bg-gray-100">
-                                                <tr>
-                                                    <th className="p-2 text-left">Pecahan</th>
-                                                    {KANTONG_LABELS.map(k => <th key={k.id} className={`p-2 text-center ${k.color}`}>{k.name}</th>)}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {DENOMINATIONS.map(d => (
-                                                    <tr key={d.value} className="border-b">
-                                                        <td className="p-2 font-medium">{d.label}</td>
-                                                        {KANTONG_LABELS.map(k => {
-                                                            const qty = viewData.uang[k.id]?.[d.value] || 0;
-                                                            const subtotal = qty * d.value;
-                                                            return (
-                                                                <td key={`${k.id}-${d.value}`} className="p-2 text-center">
-                                                                    {qty > 0 ? (
-                                                                        <div>
-                                                                            <span className="font-bold">{qty}</span> <span className="text-xs text-gray-500">lbr</span>
-                                                                            <div className="text-xs text-blue-600">{formatRupiah(subtotal)}</div>
-                                                                        </div>
-                                                                    ) : <span className="text-gray-300">-</span>}
-                                                                </td>
-                                                            );
-                                                        })}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white p-4 rounded shadow mt-4">
-                                    <h4 className="font-bold border-b mb-4">Pengesahan (Arsip)</h4>
-                                    <div className="grid grid-cols-3 gap-4 text-center">
-                                        {[
-                                            {role:'Penghitung 1', key:'penghitung1'}, 
-                                            {role:'Penghitung 2', key:'penghitung2'}, 
-                                            {role:'Bendahara', key:'bendahara'}
-                                        ].map(signer => (
-                                            <div key={signer.key} className="flex flex-col items-center">
-                                                <div className="h-16 w-full border-b border-gray-200 mb-2 flex items-end justify-center">
-                                                     {viewData.tandaTangan[`sign_${signer.key}`] ? (
-                                                        <span className="font-handwriting text-lg italic">{viewData.tandaTangan[`sign_${signer.key}`]}</span>
-                                                     ) : (
-                                                        <span className="text-xs text-gray-400 italic">(Tidak ada ttd)</span>
-                                                     )}
-                                                </div>
-                                                <div className="font-bold text-sm">{viewData.tandaTangan[signer.key] || '-'}</div>
-                                                <label className="text-xs text-gray-500 mt-1">{signer.role}</label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
+                {showHelp && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex justify-center items-center p-4 print:hidden animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col p-6">
+                            <h3 className="font-bold text-lg text-blue-900 mb-4"><HelpCircle className="inline w-5 h-5 mr-2"/> Panduan</h3>
+                            <div className="space-y-4 text-sm text-gray-700">
+                                <p><b>1. Mode Online (Awan Hijau):</b> Data otomatis tersimpan di Cloud dan sinkron antara HP & Laptop.</p>
+                                <p><b>2. Mode Offline (Awan Abu):</b> Data hanya tersimpan di HP ini. Gunakan Backup/Restore untuk pindah data.</p>
+                                <p><b>3. Masalah Input:</b> Jika angka sering kembali ke 0, coba ketik perlahan. Sistem akan menunggu anda selesai mengetik sebelum sync.</p>
                             </div>
-                            <div className="p-4 border-t text-right"><button onClick={()=>setViewData(null)} className="px-4 py-2 bg-blue-600 text-white rounded">Tutup</button></div>
+                            <div className="mt-6 text-right"><button onClick={() => setShowHelp(false)} className="px-6 py-2 bg-blue-600 text-white rounded font-bold">Tutup</button></div>
                         </div>
                     </div>
                 )}
-
-                {/* MODAL BANTUAN SINKRONISASI */}
-                {showHelp && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex justify-center items-center p-4 print:hidden animate-fade-in">
-                        <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col">
-                            <div className="p-4 border-b bg-blue-50 flex justify-between items-center">
-                                <h3 className="font-bold text-lg text-blue-900 flex items-center">
-                                    <HelpCircle className="w-5 h-5 mr-2"/> Panduan Sinkronisasi Data
-                                </h3>
-                                <button onClick={() => setShowHelp(false)} className="p-1 hover:bg-blue-200 rounded-full text-blue-900"><X className="w-6 h-6"/></button>
-                            </div>
-                            <div className="p-6 overflow-y-auto max-h-[70vh] text-sm text-gray-700 space-y-4">
-                                <p>Aplikasi ini bersifat <b>Offline/Mandiri</b>. Untuk memindahkan data dari HP Petugas ke HP/Laptop Bendahara, ikuti langkah berikut:</p>
-                                
-                                <div className="bg-green-50 p-3 rounded border border-green-200">
-                                    <h4 className="font-bold text-green-800 mb-1">1. Di HP Petugas (Pengirim)</h4>
-                                    <ul className="list-disc pl-5 space-y-1">
-                                        <li>Pastikan data sudah diinput.</li>
-                                        <li>Klik tombol <span className="inline-flex items-center bg-blue-700 text-white px-1 rounded mx-1"><Download className="w-3 h-3 text-green-300 mr-1"/> Backup</span> di menu atas.</li>
-                                        <li>File <b>.json</b> akan terunduh ke HP.</li>
-                                        <li>Kirim file tersebut ke Bendahara via <b>WhatsApp / Email</b>.</li>
-                                    </ul>
+                
+                {viewData && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 print:hidden">
+                        <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+                            <div className="p-4 border-b flex justify-between"><h3 className="font-bold">Detail</h3><button onClick={()=>setViewData(null)}><X className="w-6 h-6"/></button></div>
+                            <div className="p-6 overflow-y-auto modal-scroll bg-gray-50">
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <div className="bg-white p-4 rounded shadow"><h4 className="font-bold border-b mb-2">Total</h4><p className="text-2xl font-bold text-blue-800">{formatRupiah(calculateGrandTotal(viewData))}</p></div>
                                 </div>
-
-                                <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                                    <h4 className="font-bold text-yellow-800 mb-1">2. Di HP/Laptop Bendahara (Penerima)</h4>
-                                    <ul className="list-disc pl-5 space-y-1">
-                                        <li>Simpan file <b>.json</b> yang diterima dari WhatsApp.</li>
-                                        <li>Buka Aplikasi Kolekte ini.</li>
-                                        <li>Klik tombol <span className="inline-flex items-center bg-blue-700 text-white px-1 rounded mx-1"><Upload className="w-3 h-3 text-yellow-300 mr-1"/> Restore</span> di menu atas.</li>
-                                        <li>Pilih file <b>.json</b> tadi.</li>
-                                        <li>Data akan otomatis masuk ke aplikasi Bendahara.</li>
-                                    </ul>
+                                <div className="bg-white p-4 rounded shadow mt-4">
+                                    <h4 className="font-bold border-b mb-2">Rincian</h4>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm border">
+                                            <thead className="bg-gray-100"><tr><th className="p-2 text-left">Pecahan</th>{KANTONG_LABELS.map(k => <th key={k.id} className={`p-2 text-center ${k.color}`}>{k.name}</th>)}</tr></thead>
+                                            <tbody>{DENOMINATIONS.map(d => (<tr key={d.value} className="border-b"><td className="p-2 font-medium">{d.label}</td>{KANTONG_LABELS.map(k => { const qty = viewData.uang[k.id]?.[d.value] || 0; return (<td key={`${k.id}-${d.value}`} className="p-2 text-center">{qty > 0 ? (<div><span className="font-bold">{qty}</span> <span className="text-xs text-gray-500">lbr</span></div>) : <span className="text-gray-300">-</span>}</td>); })}</tr>))}</tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                                <p className="text-xs text-gray-500 italic text-center mt-4">Catatan: Proses ini bisa dilakukan antar semua perangkat (Android, iPhone, Laptop Windows/Mac).</p>
                             </div>
-                            <div className="p-4 border-t bg-gray-50 text-right">
-                                <button onClick={() => setShowHelp(false)} className="px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition">Mengerti</button>
-                            </div>
+                            <div className="p-4 border-t text-right"><button onClick={()=>setViewData(null)} className="px-4 py-2 bg-blue-600 text-white rounded">Tutup</button></div>
                         </div>
                     </div>
                 )}

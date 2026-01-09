@@ -1,21 +1,24 @@
-
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Kolekte GKPS - Aman & Standalone</title>
     
-    <!-- 1. ENGINE: React, ReactDOM, Babel, QRious, dan FIREBASE (Baru) -->
+    <!-- 1. ENGINE: React, ReactDOM, Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Library QR Code Generator (Stabil & Offline) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     
-    <!-- Firebase Compat Library (Agar mudah digunakan di single file) -->
+    <!-- 2. FIREBASE ENGINE (Lengkap dengan Auth & Firestore) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script> 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
-    <!-- 2. STYLE: Tailwind CSS -->
+    <!-- 3. STYLE: Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -229,8 +232,7 @@
             return <canvas ref={canvasRef} className="border shadow-sm rounded"/>;
         };
 
-        // --- CONFIG FIREBASE DARI USER (HARDCODED) ---
-        // Ini memastikan app langsung online tanpa input manual lagi.
+        // --- CONFIG FIREBASE USER ---
         const DEFAULT_FIREBASE_CONFIG = JSON.stringify({
           apiKey: "AIzaSyDhSwLYn1MnqiQShoXtoyx99x6XbRo6i7E",
           authDomain: "kolektegkpstangerang.firebaseapp.com",
@@ -285,10 +287,10 @@
           });
 
           // STATE FIREBASE & SINKRONISASI
-          // Inisialisasi dengan DEFAULT_FIREBASE_CONFIG jika tidak ada di localStorage
           const [fbConfigRaw, setFbConfigRaw] = useState(() => localStorage.getItem('gkps_fb_config') || DEFAULT_FIREBASE_CONFIG);
           const [db, setDb] = useState(null);
-          const [syncStatus, setSyncStatus] = useState('offline'); // offline, connecting, connected, error
+          const [syncStatus, setSyncStatus] = useState('offline'); 
+          const [lastErrorMessage, setLastErrorMessage] = useState(''); // ERROR MESSAGE STATE
           const [showDbModal, setShowDbModal] = useState(false);
 
           const [lastSaved, setLastSaved] = useState(null);
@@ -297,31 +299,43 @@
           const [showPinModal, setShowPinModal] = useState(false); 
           const [showShareModal, setShowShareModal] = useState(false); 
           
-          // LINK VERCEL SEBAGAI DEFAULT UNTUK SHARE QR
           const [urlToShare, setUrlToShare] = useState('https://k-gkps-tangerang.vercel.app/');
-          
           const [viewData, setViewData] = useState(null);
           const [selectedIds, setSelectedIds] = useState(new Set()); 
           const fileInputRef = useRef(null);
           const [pinForm, setPinForm] = useState({ old: '', new: '', confirm: '' });
 
-          // INIT FIREBASE
+          // INIT FIREBASE DENGAN AUTH ANONIM
           useEffect(() => {
               if (fbConfigRaw) {
                   try {
                       const config = JSON.parse(fbConfigRaw);
-                      // Cek apakah firebase sudah di-init sebelumnya untuk mencegah double-init
                       if (!firebase.apps.length) {
                           firebase.initializeApp(config);
                       } else {
-                          // Jika sudah ada app tapi config beda (jarang terjadi di single page, tapi aman)
                           firebase.app(); 
                       }
-                      setDb(firebase.firestore());
-                      setSyncStatus('connected');
+                      
+                      const firestore = firebase.firestore();
+                      setDb(firestore);
+                      
+                      // LOGIN ANONIM (AGAR DIAKSES FIREBASE)
+                      firebase.auth().signInAnonymously()
+                          .then(() => {
+                              console.log("Logged in anonymously");
+                              setSyncStatus('connected');
+                              setLastErrorMessage('');
+                          })
+                          .catch((error) => {
+                              console.error("Auth Error:", error);
+                              setSyncStatus('error');
+                              setLastErrorMessage(`Gagal Login: ${error.message}`);
+                          });
+
                   } catch (e) {
                       console.error("Firebase Init Error:", e);
                       setSyncStatus('error');
+                      setLastErrorMessage(`Config Error: ${e.message}`);
                   }
               }
           }, [fbConfigRaw]);
@@ -334,6 +348,8 @@
               const docRef = db.collection('gkps_transactions').doc(docId);
 
               const unsubscribe = docRef.onSnapshot((doc) => {
+                  setSyncStatus('connected');
+                  setLastErrorMessage(''); // Clear error if success
                   const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
                   if (doc.exists && source === "Server") {
                       const remoteData = doc.data();
@@ -345,14 +361,24 @@
               }, (error) => {
                   console.error("Sync Error:", error);
                   setSyncStatus('error');
+                  // Terjemahkan error umum
+                  if (error.code === 'permission-denied') {
+                      setLastErrorMessage("Izin Ditolak: Cek 'Firestore Rules' di Console Firebase.");
+                  } else {
+                      setLastErrorMessage(error.message);
+                  }
               });
 
               const saveDataToServer = setTimeout(() => {
                   docRef.set(data, { merge: true })
-                      .then(() => setSyncStatus('connected'))
+                      .then(() => {
+                          setSyncStatus('connected');
+                          setLastErrorMessage('');
+                      })
                       .catch((e) => {
                           console.error("Write Error:", e);
                           setSyncStatus('error');
+                          setLastErrorMessage(`Gagal Simpan: ${e.message}`);
                       });
               }, 2000);
 
@@ -451,21 +477,19 @@
             }
           };
 
-          // --- FUNGSI EDIT RIWAYAT (BARU) ---
           const handleEditHistory = (item) => {
               const input = prompt("KEAMANAN: Masukkan PIN Bendahara untuk mengedit data ini:");
               if (input !== appPin) {
                   alert("PIN Salah! Akses ditolak.");
                   return;
               }
-              
               if (confirm("Data ini akan dimuat kembali ke formulir utama untuk diubah, dan akan DIHAPUS dari daftar riwayat sementara agar tidak ganda.\n\nLanjutkan?")) {
-                  setData(item.details); // Load data lama ke form aktif
-                  const newHistory = history.filter(h => h.id !== item.id); // Hapus dari riwayat
+                  setData(item.details);
+                  const newHistory = history.filter(h => h.id !== item.id);
                   setHistory(newHistory);
                   alert("Data telah dimuat ke formulir. Silakan ubah data, lalu klik 'Simpan Arsip' kembali setelah selesai.");
-                  setShowHistory(false); // Tutup modal riwayat
-                  window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll ke atas
+                  setShowHistory(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
               }
           }
 
@@ -479,10 +503,9 @@
               setShowPinModal(false);
           };
 
-          // FITUR RESET PIN LUPA
           const handleForgotPin = () => {
               const input = prompt("Masukkan Kode Master Pemulihan (Hubungi Administrator/Programmer):");
-              if (input === 'GKPS2025') { // Hardcoded Master Key
+              if (input === 'GKPS2025') { 
                   setAppPin('123456');
                   localStorage.setItem('gkps_app_pin', '123456');
                   alert("PIN berhasil di-reset ke default: 123456");
@@ -510,7 +533,6 @@
                     <div className="flex items-center space-x-2">
                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
                        
-                       {/* INDIKATOR & TOMBOL SINKRONISASI */}
                        <button 
                            onClick={() => setShowDbModal(true)} 
                            className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
@@ -555,9 +577,9 @@
                                     className="w-full border rounded p-2 text-xs font-mono bg-gray-50"
                                     placeholder='Contoh: {"apiKey": "AIzaSy...", ...}'
                                 />
-                                <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                                    <strong>Status:</strong> {syncStatus === 'connected' ? 'Terhubung ke Firebase' : 'Tidak Terhubung'}<br/>
-                                    Jika ingin mengubah database, paste config baru di atas.
+                                <div className={`text-xs p-2 rounded ${syncStatus === 'error' ? 'bg-red-100 text-red-800' : 'bg-blue-50 text-blue-600'}`}>
+                                    <strong>Status:</strong> {syncStatus === 'connected' ? 'Terhubung (Online)' : (syncStatus === 'error' ? 'Gagal Terhubung' : 'Offline')}<br/>
+                                    {lastErrorMessage && <span className="font-bold mt-1 block">Error: {lastErrorMessage}</span>}
                                 </div>
                             </div>
                             <div className="mt-6 flex justify-end space-x-2">
@@ -590,7 +612,6 @@
                                 </div>
                             </div>
                             <div className="mt-6 flex justify-between">
-                                {/* TOMBOL LUPA PIN */}
                                 <button onClick={handleForgotPin} className="text-xs text-red-500 hover:underline flex items-center">
                                     <Key className="w-3 h-3 mr-1"/> Lupa PIN Lama?
                                 </button>
@@ -626,7 +647,6 @@
 
                                 {urlToShare && (
                                     <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border">
-                                        {/* Menggunakan Generator Client-Side QRious */}
                                         <QrCodeCanvas value={urlToShare} />
                                         <p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p>
                                     </div>
@@ -687,8 +707,6 @@
                                                 <td className="p-2 text-right font-bold text-gray-800">{formatRupiah(h.total)}</td>
                                                 <td className="p-2 text-center flex justify-center space-x-1">
                                                     <button onClick={()=>setViewData(h.details)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-100 transition" title="Lihat Detail"><Eye className="w-4 h-4"/></button>
-                                                    
-                                                    {/* TOMBOL EDIT RIWAYAT (BARU) */}
                                                     <button onClick={() => handleEditHistory(h)} className="text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-100 transition" title="Edit Data (PIN)"><Edit className="w-4 h-4"/></button>
                                                 </td>
                                             </tr>

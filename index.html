@@ -232,7 +232,8 @@
             return <canvas ref={canvasRef} className="border shadow-sm rounded"/>;
         };
 
-        // --- CONFIG FIREBASE USER ---
+        // --- CONFIG FIREBASE USER (HARDCODED) ---
+        // Konfigurasi yang Anda berikan, ditanam langsung agar tidak perlu copy-paste lagi
         const DEFAULT_FIREBASE_CONFIG = JSON.stringify({
           apiKey: "AIzaSyDhSwLYn1MnqiQShoXtoyx99x6XbRo6i7E",
           authDomain: "kolektegkpstangerang.firebaseapp.com",
@@ -287,10 +288,11 @@
           });
 
           // STATE FIREBASE & SINKRONISASI
+          // Kita akan menggunakan DEFAULT_FIREBASE_CONFIG sebagai fallback utama jika local kosong/salah
           const [fbConfigRaw, setFbConfigRaw] = useState(() => localStorage.getItem('gkps_fb_config') || DEFAULT_FIREBASE_CONFIG);
           const [db, setDb] = useState(null);
           const [syncStatus, setSyncStatus] = useState('offline'); 
-          const [lastErrorMessage, setLastErrorMessage] = useState(''); // ERROR MESSAGE STATE
+          const [lastErrorMessage, setLastErrorMessage] = useState(''); 
           const [showDbModal, setShowDbModal] = useState(false);
 
           const [lastSaved, setLastSaved] = useState(null);
@@ -305,7 +307,7 @@
           const fileInputRef = useRef(null);
           const [pinForm, setPinForm] = useState({ old: '', new: '', confirm: '' });
 
-          // INIT FIREBASE DENGAN AUTH ANONIM
+          // INIT FIREBASE DENGAN AUTH ANONIM (PENTING AGAR TIDAK DITOLAK DATABASE)
           useEffect(() => {
               if (fbConfigRaw) {
                   try {
@@ -319,17 +321,18 @@
                       const firestore = firebase.firestore();
                       setDb(firestore);
                       
-                      // LOGIN ANONIM (AGAR DIAKSES FIREBASE)
+                      // COBA LOGIN ANONIM AGAR PUNYA AKSES KE DATABASE
+                      // Pastikan "Anonymous" diaktifkan di Firebase Console -> Authentication -> Sign-in method
                       firebase.auth().signInAnonymously()
                           .then(() => {
-                              console.log("Logged in anonymously");
+                              console.log("Logged in anonymously to Firebase");
                               setSyncStatus('connected');
                               setLastErrorMessage('');
                           })
                           .catch((error) => {
                               console.error("Auth Error:", error);
                               setSyncStatus('error');
-                              setLastErrorMessage(`Gagal Login: ${error.message}`);
+                              setLastErrorMessage(`Gagal Login (Auth): ${error.message}. Pastikan 'Anonymous' aktif di Firebase Console.`);
                           });
 
                   } catch (e) {
@@ -349,7 +352,7 @@
 
               const unsubscribe = docRef.onSnapshot((doc) => {
                   setSyncStatus('connected');
-                  setLastErrorMessage(''); // Clear error if success
+                  setLastErrorMessage('');
                   const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
                   if (doc.exists && source === "Server") {
                       const remoteData = doc.data();
@@ -361,25 +364,32 @@
               }, (error) => {
                   console.error("Sync Error:", error);
                   setSyncStatus('error');
-                  // Terjemahkan error umum
                   if (error.code === 'permission-denied') {
-                      setLastErrorMessage("Izin Ditolak: Cek 'Firestore Rules' di Console Firebase.");
+                      setLastErrorMessage("Izin Ditolak: Cek 'Firestore Rules' atau aktifkan 'Anonymous Auth' di Console.");
                   } else {
                       setLastErrorMessage(error.message);
                   }
               });
 
               const saveDataToServer = setTimeout(() => {
-                  docRef.set(data, { merge: true })
-                      .then(() => {
-                          setSyncStatus('connected');
-                          setLastErrorMessage('');
-                      })
-                      .catch((e) => {
-                          console.error("Write Error:", e);
-                          setSyncStatus('error');
-                          setLastErrorMessage(`Gagal Simpan: ${e.message}`);
-                      });
+                  // Cek user login sebelum tulis
+                  const user = firebase.auth().currentUser;
+                  if (user) {
+                      docRef.set(data, { merge: true })
+                          .then(() => {
+                              setSyncStatus('connected');
+                              setLastErrorMessage('');
+                          })
+                          .catch((e) => {
+                              console.error("Write Error:", e);
+                              setSyncStatus('error');
+                              if (e.code === 'permission-denied') {
+                                  setLastErrorMessage("Gagal Simpan: Izin Ditolak (Permission Denied). Cek Rules.");
+                              } else {
+                                  setLastErrorMessage(`Gagal Simpan: ${e.message}`);
+                              }
+                          });
+                  }
               }, 2000);
 
               return () => {
@@ -522,6 +532,16 @@
               window.location.reload();
           };
 
+          // FITUR RESET KE CONFIG ASLI (JIKA USER SALAH PASTE SEBELUMNYA)
+          const handleResetConfig = () => {
+              if(confirm("Yakin ingin mereset konfigurasi Database ke kode default yang sudah ditanam?")) {
+                  localStorage.removeItem('gkps_fb_config');
+                  setFbConfigRaw(DEFAULT_FIREBASE_CONFIG);
+                  alert("Konfigurasi di-reset. Halaman akan dimuat ulang.");
+                  window.location.reload();
+              }
+          };
+
           return (
             <div className="min-h-screen bg-gray-100 font-sans text-gray-800 print:bg-white">
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" style={{ display: 'none' }} />
@@ -533,6 +553,7 @@
                     <div className="flex items-center space-x-2">
                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
                        
+                       {/* INDIKATOR & TOMBOL SINKRONISASI */}
                        <button 
                            onClick={() => setShowDbModal(true)} 
                            className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
@@ -569,7 +590,7 @@
                                 <Settings className="w-5 h-5 mr-2 text-blue-600"/> Pengaturan Database (Cloud)
                             </h3>
                             <div className="space-y-3">
-                                <p className="text-sm text-gray-600">Konfigurasi telah ditanamkan (Hardcoded) agar aplikasi langsung Online.</p>
+                                <p className="text-sm text-gray-600">Konfigurasi telah ditanamkan (Hardcoded). Jika status masih merah, pastikan "Anonymous Auth" aktif di Firebase Console.</p>
                                 <textarea 
                                     value={fbConfigRaw}
                                     onChange={(e) => setFbConfigRaw(e.target.value)}
@@ -582,9 +603,13 @@
                                     {lastErrorMessage && <span className="font-bold mt-1 block">Error: {lastErrorMessage}</span>}
                                 </div>
                             </div>
-                            <div className="mt-6 flex justify-end space-x-2">
-                                <button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
-                                <button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Simpan & Koneksi</button>
+                            <div className="mt-6 flex justify-between">
+                                {/* Tombol Reset Config Baru */}
+                                <button onClick={handleResetConfig} className="text-xs text-red-500 underline">Reset ke Config Baru</button>
+                                <div className="space-x-2">
+                                    <button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
+                                    <button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Simpan</button>
+                                </div>
                             </div>
                         </div>
                     </div>

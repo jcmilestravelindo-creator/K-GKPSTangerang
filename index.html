@@ -10,10 +10,10 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Library QR Code Generator -->
+    <!-- Library QR Code Generator (Stabil & Offline) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     
-    <!-- 2. FIREBASE ENGINE -->
+    <!-- 2. FIREBASE ENGINE (Lengkap dengan Auth & Firestore) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script> 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -38,29 +38,82 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         
+        /* Modal Scrollbar */
         .modal-scroll::-webkit-scrollbar { width: 8px; }
         .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .modal-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
         
+        /* --- OPTIMASI KHUSUS CETAK (PRINT CSS) --- */
         @media print {
-            @page { size: A4; margin: 5mm; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11px; background-color: white; }
+            @page { 
+                size: A4; 
+                margin: 5mm; 
+            }
+            body { 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+                font-size: 11px; 
+                background-color: white;
+            }
+            
             .no-print, nav, button, .guidance-box { display: none !important; }
-            main { width: 100%; max-width: none; padding: 0; margin: 0; }
-            .print-header { padding: 10px !important; border-bottom-width: 2px !important; }
+            
+            main { 
+                width: 100%; 
+                max-width: none; 
+                padding: 0; 
+                margin: 0; 
+            }
+            
+            .print-header { 
+                padding: 10px !important; 
+                border-bottom-width: 2px !important; 
+            }
             .print-header h1 { font-size: 16px !important; margin-bottom: 2px; }
             .print-header h2 { font-size: 14px !important; }
             .print-header p { display: none; }
-            .print-grid-compact { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px !important; padding: 8px !important; }
-            .print-input-compact { border: none !important; padding: 0 !important; height: auto !important; font-weight: bold; font-size: 11px; }
+
+            .print-grid-compact { 
+                display: grid; 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 8px !important; 
+                padding: 8px !important;
+            }
+            .print-input-compact {
+                border: none !important;
+                padding: 0 !important;
+                height: auto !important;
+                font-weight: bold;
+                font-size: 11px;
+            }
             label { font-size: 9px !important; text-transform: uppercase; color: #666; }
+
             table { font-size: 10px !important; }
             th, td { padding: 4px 2px !important; }
             input[type="number"] { font-size: 10px !important; }
-            .print-signature-area { margin-top: 10px !important; padding: 10px !important; border-top: 1px solid #ccc; page-break-inside: avoid; }
+
+            .print-signature-area { 
+                margin-top: 10px !important; 
+                padding: 10px !important; 
+                border-top: 1px solid #ccc;
+                page-break-inside: avoid; 
+            }
             .print-signature-box { height: 40px !important; } 
-            .print-signature-input { padding-top: 5px !important; font-size: 12px !important; }
-            .print-security-footer { display: block !important; font-size: 9px !important; text-align: center; border: 1px solid #ddd; padding: 4px; margin-top: 8px; page-break-inside: avoid; }
+            .print-signature-input { 
+                padding-top: 5px !important; 
+                font-size: 12px !important;
+            }
+            
+            .print-security-footer {
+                display: block !important;
+                font-size: 9px !important;
+                text-align: center;
+                border: 1px solid #ddd;
+                padding: 4px;
+                margin-top: 8px;
+                page-break-inside: avoid;
+            }
+
             ::-webkit-scrollbar { display: none; }
         }
     </style>
@@ -98,13 +151,18 @@
         const Key = ({ className }) => <IconBase className={className}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></IconBase>;
         const Edit = ({ className }) => <IconBase className={className}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>;
 
-        // --- DATA ---
+        // --- DATA KONSTAN ---
         const DENOMINATIONS = [
-          { value: 100000, label: 'Rp 100.000' }, { value: 50000, label: 'Rp 50.000' },
-          { value: 20000, label: 'Rp 20.000' }, { value: 10000, label: 'Rp 10.000' },
-          { value: 5000, label: 'Rp 5.000' }, { value: 2000, label: 'Rp 2.000' },
-          { value: 1000, label: 'Rp 1.000' }, { value: 500, label: 'Koin/Lain' },
+          { value: 100000, label: 'Rp 100.000' },
+          { value: 50000, label: 'Rp 50.000' },
+          { value: 20000, label: 'Rp 20.000' },
+          { value: 10000, label: 'Rp 10.000' },
+          { value: 5000, label: 'Rp 5.000' },
+          { value: 2000, label: 'Rp 2.000' },
+          { value: 1000, label: 'Rp 1.000' },
+          { value: 500, label: 'Koin/Lain' },
         ];
+
         const KANTONG_LABELS = [
           { id: 'k1', name: 'Kantong 1', color: 'bg-blue-50 border-blue-200' },
           { id: 'k2', name: 'Kantong 2', color: 'bg-green-50 border-green-200' },
@@ -112,15 +170,22 @@
           { id: 'k4', name: 'Kantong 4', color: 'bg-purple-50 border-purple-200' },
           { id: 'k5', name: 'Kantong HBN', color: 'bg-orange-50 border-orange-200' },
         ];
-        const SECTORS = ["Sektor I", "Sektor II", "Sektor III", "Sektor IV", "Sektor V", "Sektor VI", "Sektor VII", "Sektor VIII", "Sektor IX", "Sektor X", "Sektor XI", "Sektor XII"];
+
+        const SECTORS = [
+            "Sektor I", "Sektor II", "Sektor III", "Sektor IV", "Sektor V", "Sektor VI",
+            "Sektor VII", "Sektor VIII", "Sektor IX", "Sektor X", "Sektor XI", "Sektor XII"
+        ];
+
         const formatRupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
-        // --- COMPONENTS ---
+        // --- KOMPONEN GRAFIK SEDERHANA ---
         const SimpleChart = ({ history }) => {
           if (!history || history.length === 0) return <div className="text-center text-gray-400 p-4">Belum ada data riwayat.</div>;
+          
           const data = history.slice(0, 5).reverse();
           const maxVal = Math.max(...data.map(d => d.total));
           const chartHeight = 160; 
+
           return (
             <div className="w-full p-4 overflow-x-auto">
               <div className="flex items-end justify-around space-x-4 h-64 border-l border-b border-gray-300 pb-2">
@@ -128,9 +193,15 @@
                   const height = maxVal > 0 ? (item.total / maxVal) * chartHeight : 0;
                   return (
                     <div key={idx} className="flex flex-col items-center group relative w-24">
-                      <div className="absolute bottom-full mb-2 w-full text-center z-10"><span className="inline-block px-1 bg-white/80 rounded text-[10px] sm:text-xs font-bold text-gray-800 whitespace-nowrap shadow-sm">{formatRupiah(item.total)}</span></div>
+                      <div className="absolute bottom-full mb-2 w-full text-center z-10">
+                        <span className="inline-block px-1 bg-white/80 rounded text-[10px] sm:text-xs font-bold text-gray-800 whitespace-nowrap shadow-sm">
+                            {formatRupiah(item.total)}
+                        </span>
+                      </div>
                       <div className="w-full bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-all duration-500" style={{ height: `${height}px` }}></div>
-                      <div className="text-[10px] text-gray-500 mt-2 text-center w-full font-medium">{new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
+                      <div className="text-[10px] text-gray-500 mt-2 text-center w-full font-medium">
+                        {new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                      </div>
                     </div>
                   );
                 })}
@@ -139,16 +210,29 @@
           );
         };
 
+        // --- KOMPONEN QR CODE CANVAS ---
         const QrCodeCanvas = ({ value }) => {
             const canvasRef = useRef(null);
+
             useEffect(() => {
                 if (canvasRef.current && value) {
-                    try { new QRious({ element: canvasRef.current, value: value, size: 250, level: 'H' }); } catch (e) { console.error("Gagal membuat QR:", e); }
+                    try {
+                        new QRious({
+                            element: canvasRef.current,
+                            value: value,
+                            size: 250, 
+                            level: 'H' 
+                        });
+                    } catch (e) {
+                        console.error("Gagal membuat QR:", e);
+                    }
                 }
             }, [value]);
+
             return <canvas ref={canvasRef} className="border shadow-sm rounded"/>;
         };
 
+        // --- CONFIG FIREBASE USER (HARDCODED) ---
         const DEFAULT_FIREBASE_CONFIG = JSON.stringify({
           apiKey: "AIzaSyDhSwLYn1MnqiQShoXtoyx99x6XbRo6i7E",
           authDomain: "kolektegkpstangerang.firebaseapp.com",
@@ -159,19 +243,42 @@
           measurementId: "G-6JHDXEJD3D"
         });
 
+        // --- STATE AWAL DEFAULT ---
         const INITIAL_STATE_TEMPLATE = {
-            metadata: { tanggal: new Date().toISOString().split('T')[0], minggu: '', sektor: 'Sektor I', pengkhotbah: '', liturgis: '', jenisIbadah: 'Minggu Pagi', },
+            metadata: {
+              tanggal: new Date().toISOString().split('T')[0],
+              minggu: '',
+              sektor: 'Sektor I', 
+              pengkhotbah: '',
+              liturgis: '',
+              jenisIbadah: 'Minggu Pagi',
+            },
             kehadiran: { pria: 0, wanita: 0, anak: 0 },
-            uang: KANTONG_LABELS.reduce((acc, k) => { acc[k.id] = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {}); return acc; }, {}),
-            tandaTangan: { penghitung1: '', sign_penghitung1: '', penghitung2: '', sign_penghitung2: '', bendahara: '', sign_bendahara: '', }
+            uang: KANTONG_LABELS.reduce((acc, k) => {
+              acc[k.id] = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {});
+              return acc;
+            }, {}),
+            tandaTangan: {
+              penghitung1: '', sign_penghitung1: '',
+              penghitung2: '', sign_penghitung2: '',
+              bendahara: '', sign_bendahara: '',
+            }
         };
 
+        // --- FUNGSI MERGE DATA YANG AMAN (PENTING AGAR TIDAK CRASH) ---
         const validateAndFixData = (data) => {
             if (!data) return INITIAL_STATE_TEMPLATE;
+            
+            // Perbaiki jika uang/kantong hilang (biasanya terjadi jika doc baru dibuat di firebase tapi kosong)
             const safeUang = { ...INITIAL_STATE_TEMPLATE.uang };
             if (data.uang) {
-                Object.keys(safeUang).forEach(key => { if (data.uang[key]) safeUang[key] = { ...safeUang[key], ...data.uang[key] }; });
+                Object.keys(safeUang).forEach(key => {
+                    if (data.uang[key]) {
+                        safeUang[key] = { ...safeUang[key], ...data.uang[key] };
+                    }
+                });
             }
+
             return {
                 metadata: { ...INITIAL_STATE_TEMPLATE.metadata, ...data.metadata },
                 kehadiran: { ...INITIAL_STATE_TEMPLATE.kehadiran, ...data.kehadiran },
@@ -180,7 +287,7 @@
             };
         };
 
-        // --- APP COMPONENT ---
+        // --- KOMPONEN APLIKASI UTAMA ---
         function App() {
           const [data, setData] = useState(() => {
             const saved = localStorage.getItem('gkps_kolekte_data');
@@ -192,7 +299,9 @@
             return savedHist ? JSON.parse(savedHist) : [];
           });
 
-          const [appPin, setAppPin] = useState(() => localStorage.getItem('gkps_app_pin') || '123456');
+          const [appPin, setAppPin] = useState(() => {
+              return localStorage.getItem('gkps_app_pin') || '123456';
+          });
 
           const [fbConfigRaw, setFbConfigRaw] = useState(() => localStorage.getItem('gkps_fb_config') || DEFAULT_FIREBASE_CONFIG);
           const [db, setDb] = useState(null);
@@ -200,13 +309,14 @@
           const [syncStatus, setSyncStatus] = useState('offline'); 
           const [lastErrorMessage, setLastErrorMessage] = useState(''); 
           const [showDbModal, setShowDbModal] = useState(false);
-          const lastEditTime = useRef(0);
+          const lastEditTime = useRef(0); // TIMESTAMP TERAKHIR EDIT LOKAL
 
           const [lastSaved, setLastSaved] = useState(null);
           const [showHistory, setShowHistory] = useState(false);
           const [showHelp, setShowHelp] = useState(false);
           const [showPinModal, setShowPinModal] = useState(false); 
           const [showShareModal, setShowShareModal] = useState(false); 
+          
           const [urlToShare, setUrlToShare] = useState('https://k-gkps-tangerang.vercel.app/');
           const [viewData, setViewData] = useState(null);
           const [selectedIds, setSelectedIds] = useState(new Set()); 
@@ -218,9 +328,14 @@
               if (fbConfigRaw) {
                   try {
                       const config = JSON.parse(fbConfigRaw);
-                      if (!firebase.apps.length) firebase.initializeApp(config);
-                      else firebase.app(); 
-                      setDb(firebase.firestore());
+                      if (!firebase.apps.length) {
+                          firebase.initializeApp(config);
+                      } else {
+                          firebase.app(); 
+                      }
+                      const firestore = firebase.firestore();
+                      setDb(firestore);
+                      
                       const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
                           if (user) {
                               setAuthUser(user);
@@ -241,46 +356,72 @@
               }
           }, [fbConfigRaw]);
 
-          // REALTIME SYNC: ACTIVE DATA
+          // REALTIME SYNC (DENGAN LOGIKA "JANGAN GANGGU")
           useEffect(() => {
               if (!db || !authUser) return;
+
               const docId = `${data.metadata.tanggal}_${data.metadata.jenisIbadah.replace(/\s+/g, '_')}`;
               const docRef = db.collection('gkps_transactions').doc(docId);
 
               const unsubscribe = docRef.onSnapshot((doc) => {
                   setSyncStatus('connected');
                   setLastErrorMessage('');
-                  if (doc.exists && doc.metadata.hasPendingWrites === false) {
-                      if (Date.now() - lastEditTime.current < 10000) return; // Prevent overwriting while typing
+                  const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
+                  if (doc.exists && source === "Server") {
+                      // CEK APAKAH USER BARU SAJA MENGETIK (DALAM 10 DETIK TERAKHIR)
+                      // Jika ya, abaikan update server sementara agar tidak menimpa ketikan user
+                      if (Date.now() - lastEditTime.current < 10000) {
+                          console.log("Update server diabaikan: User sedang aktif mengetik.");
+                          return;
+                      }
+
                       const remoteData = doc.data();
                       const safeData = validateAndFixData(remoteData);
-                      if (JSON.stringify(safeData) !== JSON.stringify(data)) setData(safeData);
+                      
+                      if (JSON.stringify(safeData) !== JSON.stringify(data)) {
+                          setData(safeData);
+                      }
                   }
-              }, (error) => { console.error(error); setSyncStatus('error'); });
+              }, (error) => {
+                  console.error(error);
+                  setSyncStatus('error');
+              });
 
               const saveDataToServer = setTimeout(() => {
-                  if (authUser) docRef.set(data, { merge: true }).then(() => setSyncStatus('connected')).catch((e) => setSyncStatus('error'));
+                  if (authUser) {
+                      docRef.set(data, { merge: true })
+                          .then(() => setSyncStatus('connected'))
+                          .catch((e) => setSyncStatus('error'));
+                  }
               }, 2000);
-              return () => { unsubscribe(); clearTimeout(saveDataToServer); };
+
+              return () => {
+                  unsubscribe();
+                  clearTimeout(saveDataToServer);
+              };
           }, [data, db, authUser]);
 
-          // REALTIME SYNC: HISTORY ARCHIVE
+          // --- BARU: SINKRONISASI RIWAYAT KE FIREBASE ---
           useEffect(() => {
               if (!db || !authUser) return;
               const historyRef = db.collection('gkps_data').doc('history_archive');
+              
+              // 1. Dengar perubahan riwayat dari Cloud
               const unsubscribe = historyRef.onSnapshot((doc) => {
                   if (doc.exists) {
                       const remoteHistory = doc.data().entries || [];
+                      // Update lokal jika berbeda
                       if (JSON.stringify(remoteHistory) !== JSON.stringify(history)) {
                           setHistory(remoteHistory);
                           console.log("Riwayat disinkronkan dari server");
                       }
                   }
               }, (error) => console.error("History Sync Error:", error));
+
               return () => unsubscribe();
           }, [db, authUser]); // Dependensi tanpa 'history' untuk mencegah loop
 
-          // HELPER UNTUK UPDATE CLOUD HISTORY
+          // Fungsi Helper untuk Update Riwayat ke Cloud
           const updateCloudHistory = (newHistory) => {
               if (db && authUser) {
                   db.collection('gkps_data').doc('history_archive').set({ entries: newHistory })
@@ -290,15 +431,27 @@
           };
 
           // STORAGE EFFECTS
-          useEffect(() => { localStorage.setItem('gkps_kolekte_data', JSON.stringify(data)); setLastSaved(new Date().toLocaleTimeString('id-ID')); }, [data]);
-          useEffect(() => { localStorage.setItem('gkps_kolekte_history', JSON.stringify(history)); }, [history]);
-          useEffect(() => { localStorage.setItem('gkps_app_pin', appPin); }, [appPin]);
+          useEffect(() => {
+            localStorage.setItem('gkps_kolekte_data', JSON.stringify(data));
+            setLastSaved(new Date().toLocaleTimeString('id-ID'));
+          }, [data]);
 
-          // HANDLERS
-          const handleMetaChange = (e) => setData({ ...data, metadata: { ...data.metadata, [e.target.name]: e.target.value } });
+          useEffect(() => {
+            localStorage.setItem('gkps_kolekte_history', JSON.stringify(history));
+          }, [history]);
+
+          useEffect(() => {
+            localStorage.setItem('gkps_app_pin', appPin);
+          }, [appPin]);
+
+          // --- PERBAIKAN: handleMetaChange DENGAN UPDATE WAKTU EDIT ---
+          const handleMetaChange = (e) => {
+              lastEditTime.current = Date.now(); // FIX: Tandai user sedang mengetik agar tidak di-overwrite
+              setData({ ...data, metadata: { ...data.metadata, [e.target.name]: e.target.value } });
+          };
           
           const handleAttChange = (e) => {
-              lastEditTime.current = Date.now();
+              lastEditTime.current = Date.now(); 
               const val = e.target.value;
               const valToStore = val === '' ? '' : parseInt(val);
               setData(prev => ({ ...prev, kehadiran: { ...prev.kehadiran, [e.target.name]: valToStore } }));
@@ -315,7 +468,16 @@
             setData(prev => {
                 const prevUang = prev.uang || {};
                 const prevKantong = prevUang[kantongId] || {};
-                return { ...prev, uang: { ...prevUang, [kantongId]: { ...prevKantong, [denomValue]: val } } };
+                return {
+                    ...prev,
+                    uang: {
+                        ...prevUang,
+                        [kantongId]: {
+                            ...prevKantong,
+                            [denomValue]: val
+                        }
+                    }
+                };
             });
           };
 
@@ -336,8 +498,11 @@
              const blob = new Blob([JSON.stringify({ data, history, backupDate: new Date().toISOString(), appName: 'GKPS Kolekte App' }, null, 2)], { type: "application/json" });
              const url = URL.createObjectURL(blob);
              const link = document.createElement("a");
-             link.href = url; link.download = `GKPS_Backup_${new Date().toISOString().split('T')[0]}.json`;
-             document.body.appendChild(link); link.click(); document.body.removeChild(link);
+             link.href = url;
+             link.download = `GKPS_Backup_${new Date().toISOString().split('T')[0]}.json`;
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
           };
 
           const handleImportClick = () => fileInputRef.current.click();

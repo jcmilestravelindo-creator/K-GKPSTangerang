@@ -313,7 +313,10 @@
           const [syncStatus, setSyncStatus] = useState('offline'); 
           const [lastErrorMessage, setLastErrorMessage] = useState(''); 
           const [showDbModal, setShowDbModal] = useState(false);
-          const lastEditTime = useRef(0); // TIMESTAMP TERAKHIR EDIT LOKAL
+          // NEW: Modal PIN untuk Akses DB Setting
+          const [showDbPinModal, setShowDbPinModal] = useState(false); 
+          const [dbPinInput, setDbPinInput] = useState('');
+          const lastEditTime = useRef(0); 
 
           const [lastSaved, setLastSaved] = useState(null);
           const [showHistory, setShowHistory] = useState(false);
@@ -708,6 +711,17 @@
               }
           };
 
+          // --- FUNGSI BARU: SUBMIT PIN UNTUK BUKA DB ---
+          const handleDbPinSubmit = () => {
+              if (dbPinInput === appPin) {
+                  setShowDbPinModal(false);
+                  setDbPinInput('');
+                  setShowDbModal(true); // Buka modal DB yang asli
+              } else {
+                  alert("PIN Salah!");
+              }
+          };
+
           return (
             <div className="min-h-screen bg-gray-100 font-sans text-gray-800 print:bg-white">
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" style={{ display: 'none' }} />
@@ -718,7 +732,15 @@
                     <div className="flex items-center space-x-3"><Calculator className="h-8 w-8" /><span className="font-bold text-xl tracking-tight hidden sm:block">GKPS App</span></div>
                     <div className="flex items-center space-x-2">
                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
-                       <button onClick={() => setShowDbModal(true)} className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-600'}`} title="Cloud"><Cloud className="h-5 w-5"/></button>
+                       
+                       <button 
+                           onClick={() => setShowDbPinModal(true)} // PROTEKSI PIN DI SINI
+                           className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
+                           title={syncStatus === 'connected' ? 'Online & Sinkron' : 'Mode Offline / Konfigurasi Cloud'}
+                       >
+                           {syncStatus === 'connected' ? <Cloud className="h-5 w-5"/> : <CloudOff className="h-5 w-5"/>}
+                       </button>
+
                        <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan"><HelpCircle className="h-5 w-5"/></button>
                        <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share QR"><QrCode className="h-5 w-5"/></button>
                        <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN"><Lock className="h-5 w-5 text-yellow-300"/></button>
@@ -736,6 +758,31 @@
               </nav>
 
               <main className="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8 print:max-w-full print:p-0">
+                
+                {/* --- MODAL PIN KHUSUS UNTUK AKSES DB --- */}
+                {showDbPinModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[80] flex justify-center items-center p-4 print:hidden animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-sm shadow-2xl flex flex-col p-6">
+                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
+                                <Lock className="w-5 h-5 mr-2 text-red-600"/> Keamanan Database
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">Area ini khusus untuk Administrator/Bendahara. Masukkan PIN untuk melanjutkan.</p>
+                            <input 
+                                type="password" 
+                                value={dbPinInput} 
+                                onChange={(e) => setDbPinInput(e.target.value)} 
+                                className="w-full border rounded p-2 mb-4 text-center tracking-widest text-lg" 
+                                placeholder="PIN" 
+                                autoFocus
+                            />
+                            <div className="flex justify-end space-x-2">
+                                <button onClick={() => setShowDbPinModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Batal</button>
+                                <button onClick={handleDbPinSubmit} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold">Buka</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {showDbModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
                         <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col p-6">
@@ -811,7 +858,7 @@
                         <div className="space-y-4 print:space-y-1">
                             <div><label className="block text-sm font-medium">Pengkhotbah</label><input type="text" name="pengkhotbah" value={data.metadata.pengkhotbah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">Kehadiran (Jiwa)</label>
+                                <label className="block text-sm font-medium mb-1">Kehadiran</label>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="text-center"><span className="text-xs text-gray-500">Pria</span><input type="number" name="pria" value={data.kehadiran.pria === '' ? '' : data.kehadiran.pria} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
                                     <div className="text-center"><span className="text-xs text-gray-500">Wanita</span><input type="number" name="wanita" value={data.kehadiran.wanita === '' ? '' : data.kehadiran.wanita} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>

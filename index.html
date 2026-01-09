@@ -123,7 +123,7 @@
 
     <!-- LOGIKA APLIKASI -->
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useCallback } = React;
 
         // --- DEFINISI IKON ---
         const IconBase = ({ children, className }) => (
@@ -233,7 +233,6 @@
         };
 
         // --- CONFIG FIREBASE USER (HARDCODED) ---
-        // Konfigurasi yang Anda berikan, ditanam langsung agar tidak perlu copy-paste lagi
         const DEFAULT_FIREBASE_CONFIG = JSON.stringify({
           apiKey: "AIzaSyDhSwLYn1MnqiQShoXtoyx99x6XbRo6i7E",
           authDomain: "kolektegkpstangerang.firebaseapp.com",
@@ -244,9 +243,8 @@
           measurementId: "G-6JHDXEJD3D"
         });
 
-        // --- KOMPONEN APLIKASI UTAMA ---
-        function App() {
-          const initialState = {
+        // --- STATE AWAL DEFAULT ---
+        const INITIAL_STATE_TEMPLATE = {
             metadata: {
               tanggal: new Date().toISOString().split('T')[0],
               minggu: '',
@@ -265,17 +263,35 @@
               penghitung2: '', sign_penghitung2: '',
               bendahara: '', sign_bendahara: '',
             }
-          };
+        };
 
+        // --- FUNGSI MERGE DATA YANG AMAN (PENTING AGAR TIDAK CRASH) ---
+        const validateAndFixData = (data) => {
+            if (!data) return INITIAL_STATE_TEMPLATE;
+            
+            // Perbaiki jika uang/kantong hilang (biasanya terjadi jika doc baru dibuat di firebase tapi kosong)
+            const safeUang = { ...INITIAL_STATE_TEMPLATE.uang };
+            if (data.uang) {
+                Object.keys(safeUang).forEach(key => {
+                    if (data.uang[key]) {
+                        safeUang[key] = { ...safeUang[key], ...data.uang[key] };
+                    }
+                });
+            }
+
+            return {
+                metadata: { ...INITIAL_STATE_TEMPLATE.metadata, ...data.metadata },
+                kehadiran: { ...INITIAL_STATE_TEMPLATE.kehadiran, ...data.kehadiran },
+                uang: safeUang,
+                tandaTangan: { ...INITIAL_STATE_TEMPLATE.tandaTangan, ...data.tandaTangan }
+            };
+        };
+
+        // --- KOMPONEN APLIKASI UTAMA ---
+        function App() {
           const [data, setData] = useState(() => {
             const saved = localStorage.getItem('gkps_kolekte_data');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                if (!parsed.metadata.sektor) parsed.metadata.sektor = 'Sektor I';
-                if (!parsed.uang.k5) parsed.uang.k5 = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {});
-                return parsed;
-            }
-            return initialState;
+            return saved ? validateAndFixData(JSON.parse(saved)) : INITIAL_STATE_TEMPLATE;
           });
 
           const [history, setHistory] = useState(() => {
@@ -287,11 +303,9 @@
               return localStorage.getItem('gkps_app_pin') || '123456';
           });
 
-          // STATE FIREBASE & SINKRONISASI
-          // Kita akan menggunakan DEFAULT_FIREBASE_CONFIG sebagai fallback utama jika local kosong/salah
           const [fbConfigRaw, setFbConfigRaw] = useState(() => localStorage.getItem('gkps_fb_config') || DEFAULT_FIREBASE_CONFIG);
           const [db, setDb] = useState(null);
-          const [authUser, setAuthUser] = useState(null); // User state
+          const [authUser, setAuthUser] = useState(null);
           const [syncStatus, setSyncStatus] = useState('offline'); 
           const [lastErrorMessage, setLastErrorMessage] = useState(''); 
           const [showDbModal, setShowDbModal] = useState(false);
@@ -308,7 +322,7 @@
           const fileInputRef = useRef(null);
           const [pinForm, setPinForm] = useState({ old: '', new: '', confirm: '' });
 
-          // INIT FIREBASE DENGAN AUTH ANONIM (PENTING AGAR TIDAK DITOLAK DATABASE)
+          // INIT FIREBASE
           useEffect(() => {
               if (fbConfigRaw) {
                   try {
@@ -318,40 +332,30 @@
                       } else {
                           firebase.app(); 
                       }
-                      
                       const firestore = firebase.firestore();
                       setDb(firestore);
                       
-                      // LISTENER AUTH STATE CHANGE (Lebih Robust)
-                      // Pastikan "Anonymous" diaktifkan di Firebase Console -> Authentication -> Sign-in method
                       const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
                           if (user) {
                               setAuthUser(user);
                               setSyncStatus('connected');
                               setLastErrorMessage('');
-                              console.log("Auth User detected:", user.uid);
                           } else {
-                              console.log("No user, trying to sign in anonymously...");
                               firebase.auth().signInAnonymously().catch((error) => {
-                                  console.error("Auth Error:", error);
                                   setSyncStatus('error');
-                                  setLastErrorMessage(`Gagal Login (Auth): ${error.message}. Pastikan 'Anonymous' aktif di Firebase Console.`);
+                                  setLastErrorMessage(`Auth Error: ${error.message}`);
                               });
                           }
                       });
-                      
                       return () => unsubscribe();
-
                   } catch (e) {
-                      console.error("Firebase Init Error:", e);
                       setSyncStatus('error');
                       setLastErrorMessage(`Config Error: ${e.message}`);
                   }
               }
           }, [fbConfigRaw]);
 
-          // REALTIME SYNC (READ & WRITE)
-          // HANYA JALAN JIKA DB DAN AUTHUSER SUDAH ADA
+          // REALTIME SYNC (DENGAN DATA FIXER)
           useEffect(() => {
               if (!db || !authUser) return;
 
@@ -364,37 +368,24 @@
                   const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
                   if (doc.exists && source === "Server") {
                       const remoteData = doc.data();
-                      if (JSON.stringify(remoteData) !== JSON.stringify(data)) {
-                          setData(remoteData);
-                          console.log("Data disinkronkan dari server");
+                      // GUNAKAN validateAndFixData UNTUK MENCEGAH DATA RUSAK/KOSONG
+                      const safeData = validateAndFixData(remoteData);
+                      
+                      // Cek kesamaan string agar tidak loop
+                      if (JSON.stringify(safeData) !== JSON.stringify(data)) {
+                          setData(safeData);
                       }
                   }
               }, (error) => {
-                  console.error("Sync Error:", error);
+                  console.error(error);
                   setSyncStatus('error');
-                  if (error.code === 'permission-denied') {
-                      setLastErrorMessage("Izin Ditolak: Cek 'Firestore Rules' atau aktifkan 'Anonymous Auth' di Console.");
-                  } else {
-                      setLastErrorMessage(error.message);
-                  }
               });
 
               const saveDataToServer = setTimeout(() => {
                   if (authUser) {
                       docRef.set(data, { merge: true })
-                          .then(() => {
-                              setSyncStatus('connected');
-                              setLastErrorMessage('');
-                          })
-                          .catch((e) => {
-                              console.error("Write Error:", e);
-                              setSyncStatus('error');
-                              if (e.code === 'permission-denied') {
-                                  setLastErrorMessage("Gagal Simpan: Izin Ditolak (Permission Denied). Cek Rules.");
-                              } else {
-                                  setLastErrorMessage(`Gagal Simpan: ${e.message}`);
-                              }
-                          });
+                          .then(() => setSyncStatus('connected'))
+                          .catch((e) => setSyncStatus('error'));
                   }
               }, 2000);
 
@@ -402,7 +393,7 @@
                   unsubscribe();
                   clearTimeout(saveDataToServer);
               };
-          }, [data, db, authUser]); // Added authUser dependency
+          }, [data, db, authUser]);
 
           useEffect(() => {
             localStorage.setItem('gkps_kolekte_data', JSON.stringify(data));
@@ -420,13 +411,34 @@
           const handleMetaChange = (e) => setData({ ...data, metadata: { ...data.metadata, [e.target.name]: e.target.value } });
           const handleAttChange = (e) => setData({ ...data, kehadiran: { ...data.kehadiran, [e.target.name]: parseInt(e.target.value) || 0 } });
           const handleSignChange = (e) => setData({ ...data, tandaTangan: { ...data.tandaTangan, [e.target.name]: e.target.value } });
+          
+          // --- FIX INPUT LOGIC ---
           const handleMoneyChange = (kantongId, denomValue, qty) => {
-            const val = parseInt(qty) || 0;
-            setData(prev => ({ ...prev, uang: { ...prev.uang, [kantongId]: { ...prev.uang[kantongId], [denomValue]: val } } }));
+            // Logika diperbaiki agar input kosong ('') bisa diterima saat menghapus angka
+            const val = qty === '' ? 0 : parseInt(qty);
+            if (isNaN(val)) return; // Jangan update jika bukan angka
+
+            setData(prev => {
+                // Pastikan struktur nested ada
+                const prevUang = prev.uang || {};
+                const prevKantong = prevUang[kantongId] || {};
+                
+                return {
+                    ...prev,
+                    uang: {
+                        ...prevUang,
+                        [kantongId]: {
+                            ...prevKantong,
+                            [denomValue]: val
+                        }
+                    }
+                };
+            });
           };
 
           const calculateBagTotal = (kantongId, sourceData = data) => {
-            if (!sourceData.uang[kantongId]) return 0;
+            // Safety check
+            if (!sourceData.uang || !sourceData.uang[kantongId]) return 0;
             return DENOMINATIONS.reduce((total, d) => total + ((sourceData.uang[kantongId][d.value] || 0) * d.value), 0);
           };
 
@@ -455,7 +467,7 @@
                     const parsed = JSON.parse(event.target.result);
                     if (parsed.appName === 'GKPS Kolekte App') {
                         if (confirm(`Restore data dari tanggal ${new Date(parsed.backupDate).toLocaleDateString()}?`)) {
-                            setData(parsed.data);
+                            setData(validateAndFixData(parsed.data));
                             setHistory(parsed.history);
                             alert("Berhasil!");
                         }
@@ -466,7 +478,7 @@
             reader.readAsText(file);
           };
 
-          const resetData = () => { if (confirm('Reset form?')) { setData(initialState); localStorage.removeItem('gkps_kolekte_data'); } };
+          const resetData = () => { if (confirm('Reset form?')) { setData(INITIAL_STATE_TEMPLATE); localStorage.removeItem('gkps_kolekte_data'); } };
           const saveToHistory = () => { if (confirm('Simpan ke Riwayat?')) { setHistory([{ id: Date.now(), date: data.metadata.tanggal, jenis: data.metadata.jenisIbadah, total: calculateGrandTotal(data), details: data }, ...history]); alert('Tersimpan!'); } };
           const handlePrint = () => window.print();
 
@@ -500,10 +512,10 @@
                   return;
               }
               if (confirm("Data ini akan dimuat kembali ke formulir utama untuk diubah, dan akan DIHAPUS dari daftar riwayat sementara agar tidak ganda.\n\nLanjutkan?")) {
-                  setData(item.details);
+                  setData(validateAndFixData(item.details));
                   const newHistory = history.filter(h => h.id !== item.id);
                   setHistory(newHistory);
-                  alert("Data telah dimuat ke formulir. Silakan ubah data, lalu klik 'Simpan Arsip' kembali setelah selesai.");
+                  alert("Data dimuat. Silakan ubah & simpan lagi.");
                   setShowHistory(false);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
               }
@@ -538,9 +550,8 @@
               window.location.reload();
           };
 
-          // FITUR RESET KE CONFIG ASLI (JIKA USER SALAH PASTE SEBELUMNYA)
           const handleResetConfig = () => {
-              if(confirm("Yakin ingin mereset konfigurasi Database ke kode default yang sudah ditanam?")) {
+              if(confirm("Yakin ingin mereset konfigurasi Database ke kode default?")) {
                   localStorage.removeItem('gkps_fb_config');
                   setFbConfigRaw(DEFAULT_FIREBASE_CONFIG);
                   alert("Konfigurasi di-reset. Halaman akan dimuat ulang.");
@@ -559,7 +570,6 @@
                     <div className="flex items-center space-x-2">
                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
                        
-                       {/* INDIKATOR & TOMBOL SINKRONISASI */}
                        <button 
                            onClick={() => setShowDbModal(true)} 
                            className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
@@ -588,7 +598,6 @@
 
               <main className="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8 print:max-w-full print:p-0">
                 
-                {/* MODAL CONFIG FIREBASE */}
                 {showDbModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
                         <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col p-6">
@@ -609,15 +618,17 @@
                                     {lastErrorMessage && <span className="font-bold mt-1 block">Error: {lastErrorMessage}</span>}
                                 </div>
                             </div>
-                            <div className="mt-6 flex justify-end space-x-2">
-                                <button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
-                                <button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Simpan</button>
+                            <div className="mt-6 flex justify-between">
+                                <button onClick={handleResetConfig} className="text-xs text-red-500 underline">Reset ke Config Baru</button>
+                                <div className="space-x-2">
+                                    <button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Tutup</button>
+                                    <button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Simpan</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* MODAL GANTI PIN */}
                 {showPinModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
                         <div className="bg-white rounded-lg w-full max-w-sm shadow-2xl flex flex-col p-6">
@@ -651,7 +662,6 @@
                     </div>
                 )}
 
-                {/* MODAL SHARE QR */}
                 {showShareModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
                         <div className="bg-white rounded-lg w-full max-w-md shadow-2xl flex flex-col p-6">
@@ -660,26 +670,16 @@
                             </h3>
                             <div className="space-y-4">
                                 <p className="text-sm text-gray-600">Scan QR Code ini untuk membuka Aplikasi Kolekte:</p>
-                                
                                 <div className="hidden">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Link File Aplikasi</label>
-                                    <input 
-                                        type="text" 
-                                        value={urlToShare} 
-                                        onChange={(e) => setUrlToShare(e.target.value)} 
-                                        className="w-full border rounded p-2" 
-                                        placeholder="https://..." 
-                                    />
+                                    <input type="text" value={urlToShare} onChange={(e) => setUrlToShare(e.target.value)} className="w-full border rounded p-2" placeholder="https://..." />
                                 </div>
-
                                 {urlToShare && (
                                     <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border">
-                                        {/* Menggunakan Generator Client-Side QRious */}
                                         <QrCodeCanvas value={urlToShare} />
                                         <p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p>
                                     </div>
                                 )}
-                                
                                 <div className="bg-blue-50 p-2 rounded border border-blue-200 text-xs text-blue-800">
                                     <strong>Info:</strong> Link ini mengarah ke aplikasi yang sudah di-hosting di Vercel. Pastikan HP terhubung ke internet saat membuka.
                                 </div>
@@ -705,9 +705,7 @@
                                 )}
                             </div>
                         </div>
-                        
                         <SimpleChart history={history} />
-                        
                         <div className="overflow-auto max-h-60 mt-4 border rounded shadow-sm">
                              <table className="min-w-full text-sm">
                                 <thead className="bg-gray-100 text-gray-700 sticky top-0">

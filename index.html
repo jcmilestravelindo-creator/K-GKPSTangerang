@@ -30,6 +30,9 @@
                     fontFamily: {
                         handwriting: ['cursive'],
                         sans: ['Inter', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     }
                 }
             }
@@ -65,7 +68,7 @@
                 background-color: white;
             }
             
-            .no-print, nav, button, .guidance-box { display: none !important; }
+            .no-print, nav, button, .guidance-box, .maintenance-screen { display: none !important; }
             
             main { 
                 width: 100%; 
@@ -160,7 +163,7 @@
         const Key = ({ className }) => <IconBase className={className}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></IconBase>;
         const Edit = ({ className }) => <IconBase className={className}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>;
         const FileSpreadsheet = ({ className }) => <IconBase className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></IconBase>;
-        const CalendarIcon = ({ className }) => <IconBase className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></IconBase>;
+        const AlertTriangle = ({ className }) => <IconBase className={className}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></IconBase>;
 
         // --- DATA KONSTAN ---
         const DENOMINATIONS = [
@@ -189,34 +192,50 @@
 
         const formatRupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
+        // --- KOMPONEN MAINTENANCE SCREEN ---
+        const MaintenanceScreen = ({ message }) => (
+            <div className="fixed inset-0 bg-gradient-to-br from-blue-900 to-gray-900 z-[100] flex flex-col items-center justify-center text-white p-6 text-center maintenance-screen animate-fade-in">
+                <div className="bg-white/10 p-8 rounded-full mb-6 backdrop-blur-sm animate-pulse-slow">
+                    <Settings className="w-16 h-16 sm:w-24 sm:h-24 opacity-90 text-yellow-400" />
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight">Sistem Sedang Pemeliharaan</h1>
+                <div className="bg-white/10 px-6 py-4 rounded-lg max-w-lg backdrop-blur-md border border-white/20">
+                    <p className="text-lg text-blue-100 font-medium">
+                        {message || "Kami sedang melakukan peningkatan sistem untuk pelayanan yang lebih baik. Mohon kembali lagi beberapa saat lagi."}
+                    </p>
+                </div>
+                <div className="mt-8 flex items-center text-sm opacity-50 space-x-2">
+                    <CloudOff className="w-4 h-4"/>
+                    <span>Tim Multimedia & IT GKPS Tangerang</span>
+                </div>
+                <div className="absolute bottom-5 text-xs text-gray-500">System ID: GKPS-MNT-2025</div>
+            </div>
+        );
+
         // --- KOMPONEN GRAFIK SEDERHANA ---
         const SimpleChart = ({ history, onBarClick, selectedIds }) => {
           if (!history || history.length === 0) return <div className="text-center text-gray-400 p-4">Belum ada data riwayat.</div>;
           
           let data = [];
           if (selectedIds && selectedIds.size > 0) {
-              // Jika ada checklist, tampilkan HANYA yang dipilih (urutkan dari Lama -> Baru)
               data = history.filter(h => selectedIds.has(h.id)).reverse();
           } else {
-              // Default: 5 Data Terakhir
               data = history.slice(0, 5).reverse();
           }
           
           const maxVal = Math.max(...data.map(d => d.total));
           const chartHeight = 160; 
 
-          // Helper warna yang lebih beda
           const getColor = (jenis) => {
               const j = (jenis || '').toLowerCase();
-              if (j.includes('pagi')) return 'bg-cyan-500';  // Pagi = Cyan/Biru Laut
-              if (j.includes('siang')) return 'bg-yellow-500'; // Siang = Kuning
-              if (j.includes('sore')) return 'bg-orange-500'; // Sore = Jingga
-              if (j.includes('sektor')) return 'bg-emerald-500'; // Sektor = Hijau
-              if (j.includes('partonggoan')) return 'bg-purple-500'; // Partonggoan = Ungu
-              return 'bg-gray-400'; // Default
+              if (j.includes('pagi')) return 'bg-cyan-500'; 
+              if (j.includes('siang')) return 'bg-yellow-500'; 
+              if (j.includes('sore')) return 'bg-orange-500'; 
+              if (j.includes('sektor')) return 'bg-emerald-500'; 
+              if (j.includes('partonggoan')) return 'bg-purple-500'; 
+              return 'bg-gray-400'; 
           };
 
-          // Helper Label Singkat
           const getLabel = (jenis) => {
               const j = (jenis || '').toLowerCase();
               if (j.includes('pagi')) return 'PAGI';
@@ -240,7 +259,7 @@
                         <div 
                             key={idx} 
                             className="flex flex-col items-center group relative w-24 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                            onClick={() => onBarClick(item)} // KLIK BATANG UNTUK AKTIFKAN
+                            onClick={() => onBarClick(item)} 
                         >
                           <div className="absolute bottom-full mb-2 w-full text-center z-10">
                             <span className="inline-block px-1 bg-white/80 rounded text-[10px] sm:text-xs font-bold text-gray-800 whitespace-nowrap shadow-sm">
@@ -249,12 +268,10 @@
                           </div>
                           <div className={`w-full rounded-t-sm transition-all duration-500 ${barColor}`} style={{ height: `${height}px` }}></div>
                           
-                          {/* Label Tanggal sebagai "Tombol" */}
                           <div className="mt-2 w-full flex flex-col items-center">
                              <div className="bg-gray-100 px-2 py-1 rounded text-[10px] font-bold text-gray-700 shadow-sm border border-gray-200 hover:bg-blue-100">
                                 {new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                              </div>
-                             {/* Badge Keterangan Pagi/Siang */}
                              <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-full mt-1 ${barColor}`}>
                                 {labelText}
                              </span>
@@ -264,7 +281,6 @@
                     })}
                   </div>
                 </div>
-                {/* Legend / Keterangan Warna */}
                 <div className="flex flex-wrap justify-center gap-3 mt-4 text-xs text-gray-600 border-t pt-2">
                     <div className="flex items-center"><span className="w-3 h-3 bg-cyan-500 rounded-full mr-1"></span> Pagi</div>
                     <div className="flex items-center"><span className="w-3 h-3 bg-yellow-500 rounded-full mr-1"></span> Siang</div>
@@ -319,7 +335,7 @@
               liturgis: '',
               jenisIbadah: 'Minggu Pagi',
             },
-            kehadiran: { pria: 0, wanita: 0 }, // Anak dihapus
+            kehadiran: { pria: 0, wanita: 0 }, 
             uang: KANTONG_LABELS.reduce((acc, k) => {
               acc[k.id] = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {});
               return acc;
@@ -331,7 +347,7 @@
             }
         };
 
-        // --- FUNGSI MERGE DATA YANG AMAN (PENTING AGAR TIDAK CRASH) ---
+        // --- FUNGSI MERGE DATA YANG AMAN ---
         const validateAndFixData = (data) => {
             if (!data) return INITIAL_STATE_TEMPLATE;
             
@@ -374,7 +390,6 @@
           const [syncStatus, setSyncStatus] = useState('offline'); 
           const [lastErrorMessage, setLastErrorMessage] = useState(''); 
           const [showDbModal, setShowDbModal] = useState(false);
-          // NEW: Modal PIN untuk Akses DB Setting
           const [showDbPinModal, setShowDbPinModal] = useState(false); 
           const [dbPinInput, setDbPinInput] = useState('');
           const lastEditTime = useRef(0); 
@@ -390,6 +405,10 @@
           const [selectedIds, setSelectedIds] = useState(new Set()); 
           const fileInputRef = useRef(null);
           const [pinForm, setPinForm] = useState({ old: '', new: '', confirm: '' });
+
+          // --- STATE BARU: MAINTENANCE ---
+          const [maintenanceMode, setMaintenanceMode] = useState(false);
+          const [maintenanceMsg, setMaintenanceMsg] = useState("");
 
           // INIT FIREBASE
           useEffect(() => {
@@ -423,6 +442,31 @@
                   }
               }
           }, [fbConfigRaw]);
+
+          // --- LOGIC MAINTENANCE LISTENER ---
+          // Ini mendengarkan perubahan di koleksi 'gkps_config' dokumen 'global'
+          useEffect(() => {
+              if (!db) return;
+              
+              // DI SINI LOKASINYA:
+              // Aplikasi mencari collection bernama 'gkps_config' dan dokumen bernama 'global'
+              const configRef = db.collection('gkps_config').doc('global');
+              
+              const unsubConfig = configRef.onSnapshot((doc) => {
+                  if (doc.exists) {
+                      const conf = doc.data();
+                      // Cek field 'maintenance' (boolean) dan 'message' (string)
+                      setMaintenanceMode(conf.maintenance === true);
+                      setMaintenanceMsg(conf.message || "");
+                  } else {
+                      // Default jika belum ada config: Tidak Maintenance
+                      setMaintenanceMode(false);
+                  }
+              }, (err) => console.log("Config sync err (Abaikan jika offline):", err));
+
+              return () => unsubConfig();
+          }, [db]);
+
 
           // REALTIME SYNC
           useEffect(() => {
@@ -772,16 +816,21 @@
               }
           };
 
-          // --- FUNGSI BARU: SUBMIT PIN UNTUK BUKA DB ---
           const handleDbPinSubmit = () => {
               if (dbPinInput === appPin) {
                   setShowDbPinModal(false);
                   setDbPinInput('');
-                  setShowDbModal(true); // Buka modal DB yang asli
+                  setShowDbModal(true); 
               } else {
                   alert("PIN Salah!");
               }
           };
+
+          // --- RENDER UTAMA ---
+          // Jika Maintenance Aktif, tampilkan layar maintenance
+          if (maintenanceMode) {
+              return <MaintenanceScreen message={maintenanceMsg} />;
+          }
 
           return (
             <div className="min-h-screen bg-gray-100 font-sans text-gray-800 print:bg-white">
@@ -792,27 +841,27 @@
                   <div className="flex items-center justify-between h-16">
                     <div className="flex items-center space-x-3"><Calculator className="h-8 w-8" /><span className="font-bold text-xl tracking-tight hidden sm:block">GKPS App</span></div>
                     <div className="flex items-center space-x-2">
-                       <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
-                       
-                       <button 
-                           onClick={() => setShowDbPinModal(true)} // PROTEKSI PIN DI SINI
+                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
+                        
+                        <button 
+                           onClick={() => setShowDbPinModal(true)} 
                            className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
                            title={syncStatus === 'connected' ? 'Online & Sinkron' : 'Mode Offline / Konfigurasi Cloud'}
-                       >
-                           {syncStatus === 'connected' ? <Cloud className="h-5 w-5"/> : <CloudOff className="h-5 w-5"/>}
-                       </button>
+                        >
+                            {syncStatus === 'connected' ? <Cloud className="h-5 w-5"/> : <CloudOff className="h-5 w-5"/>}
+                        </button>
 
-                       <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan"><HelpCircle className="h-5 w-5"/></button>
-                       <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share QR"><QrCode className="h-5 w-5"/></button>
-                       <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN"><Lock className="h-5 w-5 text-yellow-300"/></button>
-                       <button onClick={() => setShowHistory(!showHistory)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Riwayat"><BarChart2 className="h-5 w-5"/></button>
-                       <button onClick={saveToHistory} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan Arsip"><Save className="h-5 w-5"/></button>
-                       <div className="hidden md:flex bg-blue-900 rounded p-1 space-x-1">
-                           <button onClick={handleExport} className="p-1.5 hover:bg-blue-800 rounded transition" title="Backup"><Download className="h-4 w-4 text-green-300"/></button>
-                           <button onClick={handleImportClick} className="p-1.5 hover:bg-blue-800 rounded transition" title="Restore"><Upload className="h-4 w-4 text-yellow-300"/></button>
-                       </div>
-                       <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset"><Trash2 className="h-5 w-5"/></button>
-                       <button onClick={handlePrint} className="flex items-center space-x-2 px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold"><Printer className="h-5 w-5"/><span>Cetak</span></button>
+                        <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan"><HelpCircle className="h-5 w-5"/></button>
+                        <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share QR"><QrCode className="h-5 w-5"/></button>
+                        <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN"><Lock className="h-5 w-5 text-yellow-300"/></button>
+                        <button onClick={() => setShowHistory(!showHistory)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Riwayat"><BarChart2 className="h-5 w-5"/></button>
+                        <button onClick={saveToHistory} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan Arsip"><Save className="h-5 w-5"/></button>
+                        <div className="hidden md:flex bg-blue-900 rounded p-1 space-x-1">
+                            <button onClick={handleExport} className="p-1.5 hover:bg-blue-800 rounded transition" title="Backup"><Download className="h-4 w-4 text-green-300"/></button>
+                            <button onClick={handleImportClick} className="p-1.5 hover:bg-blue-800 rounded transition" title="Restore"><Upload className="h-4 w-4 text-yellow-300"/></button>
+                        </div>
+                        <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset"><Trash2 className="h-5 w-5"/></button>
+                        <button onClick={handlePrint} className="flex items-center space-x-2 px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold"><Printer className="h-5 w-5"/><span>Cetak</span></button>
                     </div>
                   </div>
                 </div>

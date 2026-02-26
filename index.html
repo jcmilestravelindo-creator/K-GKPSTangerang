@@ -732,15 +732,22 @@
 
           const resetData = () => { if (confirm('Reset form?')) { setData(INITIAL_STATE_TEMPLATE); localStorage.removeItem('gkps_kolekte_data'); } };
           
+          // --- MODIFIKASI: RESET SETELAH SIMPAN ---
           const saveToHistory = () => { 
               if (confirm('Simpan ke Riwayat?')) { 
                   const newEntry = { id: Date.now(), date: data.metadata.tanggal, jenis: data.metadata.jenisIbadah, total: calculateGrandTotal(data), details: data };
                   const newHistory = [newEntry, ...history];
                   setHistory(newHistory); 
                   updateCloudHistory(newHistory); // Sync to Cloud
-                  alert('Tersimpan!'); 
+                  
+                  // Reset data form kembali ke awal/kosong
+                  setData(INITIAL_STATE_TEMPLATE);
+                  localStorage.removeItem('gkps_kolekte_data');
+                  
+                  alert('Tersimpan dan formulir telah dikosongkan!'); 
               } 
           };
+          // ----------------------------------------
           
           const handlePrint = () => window.print();
 

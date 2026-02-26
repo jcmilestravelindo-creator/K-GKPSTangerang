@@ -5,18 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Kolekte GKPS - Aman & Standalone</title>
     
+    <!-- 1. ENGINE: React, ReactDOM, Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <!-- Library QR Code Generator (Stabil & Offline) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
+    <!-- Library Export Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
+    <!-- 2. FIREBASE ENGINE (Lengkap dengan Auth & Firestore) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script> 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
+    <!-- 3. STYLE: Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -34,6 +39,7 @@
         }
     </script>
 
+    <!-- Style Khusus Print & Layout -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -127,6 +133,7 @@
 <body class="bg-gray-100">
     <div id="root"></div>
 
+    <!-- LOGIKA APLIKASI -->
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
@@ -318,7 +325,7 @@
           measurementId: "G-6JHDXEJD3D"
         });
 
-        // --- STATE AWAL DEFAULT (ANAK DIHAPUS, DITAMBAH FIELD PARTONGGOAN) ---
+        // --- STATE AWAL DEFAULT (ANAK DIHAPUS) ---
         const INITIAL_STATE_TEMPLATE = {
             metadata: {
               tanggal: new Date().toISOString().split('T')[0],
@@ -328,7 +335,7 @@
               liturgis: '',
               jenisIbadah: 'Minggu Pagi',
             },
-            kehadiran: { pria: 0, wanita: 0, bapa: 0, inang: 0, sm: 0, pemuda: 0 }, 
+            kehadiran: { pria: 0, wanita: 0 }, 
             uang: KANTONG_LABELS.reduce((acc, k) => {
               acc[k.id] = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {});
               return acc;
@@ -387,7 +394,7 @@
           const [dbPinInput, setDbPinInput] = useState('');
           const lastEditTime = useRef(0); 
 
-          const [lastSaved, setLastSaved] = useState(new Date().toLocaleTimeString('id-ID'));
+          const [lastSaved, setLastSaved] = useState(null);
           const [showHistory, setShowHistory] = useState(false);
           const [showHelp, setShowHelp] = useState(false);
           const [showPinModal, setShowPinModal] = useState(false); 
@@ -402,9 +409,6 @@
           // --- STATE BARU: MAINTENANCE ---
           const [maintenanceMode, setMaintenanceMode] = useState(false);
           const [maintenanceMsg, setMaintenanceMsg] = useState("");
-
-          // KONDISI PARTONGGOAN
-          const isPartonggoan = data.metadata.jenisIbadah === "Partonggoan";
 
           // INIT FIREBASE
           useEffect(() => {
@@ -440,17 +444,22 @@
           }, [fbConfigRaw]);
 
           // --- LOGIC MAINTENANCE LISTENER ---
+          // Ini mendengarkan perubahan di koleksi 'gkps_config' dokumen 'global'
           useEffect(() => {
               if (!db) return;
               
+              // DI SINI LOKASINYA:
+              // Aplikasi mencari collection bernama 'gkps_config' dan dokumen bernama 'global'
               const configRef = db.collection('gkps_config').doc('global');
               
               const unsubConfig = configRef.onSnapshot((doc) => {
                   if (doc.exists) {
                       const conf = doc.data();
+                      // Cek field 'maintenance' (boolean) dan 'message' (string)
                       setMaintenanceMode(conf.maintenance === true);
                       setMaintenanceMsg(conf.message || "");
                   } else {
+                      // Default jika belum ada config: Tidak Maintenance
                       setMaintenanceMode(false);
                   }
               }, (err) => console.log("Config sync err (Abaikan jika offline):", err));
@@ -605,27 +614,17 @@
              const kehadiran = itemData.kehadiran;
              const uang = itemData.uang;
              const ttd = itemData.tandaTangan;
-             const isPartonggoanSheet = metadata.jenisIbadah === "Partonggoan";
 
              wsData.push(["TANGGAL", metadata.tanggal, "SEKTOR", metadata.sektor]);
-             wsData.push(["FORMULIR SETORAN KOLEKTE", "", isPartonggoanSheet ? "PARTONGGOAN GKPS TANGERANG" : "GKPS TANGERANG"]);
+             wsData.push(["FORMULIR SETORAN KOLEKTE", "", "GKPS TANGERANG"]);
              wsData.push(["JENIS IBADAH", metadata.jenisIbadah]);
              wsData.push(["PENGKHOTBAH", metadata.pengkhotbah]);
              wsData.push([]);
              
-             const totalJiwa = isPartonggoanSheet 
-                ? (kehadiran.bapa || 0) + (kehadiran.inang || 0) + (kehadiran.sm || 0) + (kehadiran.pemuda || 0)
-                : (kehadiran.pria || 0) + (kehadiran.wanita || 0);
-
-             if (isPartonggoanSheet) {
-                 wsData.push(["KEHADIRAN", "Bapa", kehadiran.bapa || 0]);
-                 wsData.push(["", "Inang", kehadiran.inang || 0]);
-                 wsData.push(["", "SM", kehadiran.sm || 0]);
-                 wsData.push(["", "Pemuda", kehadiran.pemuda || 0]);
-             } else {
-                 wsData.push(["KEHADIRAN", "Pria", kehadiran.pria || 0]);
-                 wsData.push(["", "Wanita", kehadiran.wanita || 0]);
-             }
+             // Kehadiran (Tanpa Anak)
+             const totalJiwa = (kehadiran.pria || 0) + (kehadiran.wanita || 0);
+             wsData.push(["KEHADIRAN", "Pria", kehadiran.pria]);
+             wsData.push(["", "Wanita", kehadiran.wanita]);
              wsData.push(["", "Total", totalJiwa + " Jiwa"]);
              wsData.push([]);
 
@@ -837,23 +836,13 @@
             <div className="min-h-screen bg-gray-100 font-sans text-gray-800 print:bg-white">
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" style={{ display: 'none' }} />
 
-              {/* NAVIGASI SESUAI GAMBAR */}
               <nav className="bg-blue-800 text-white shadow-lg print:hidden sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="flex items-center justify-between h-16">
-                    
-                    {/* BAGIAN KIRI (Nomor 11. Auto-saved) */}
-                    <div className="flex flex-col items-start space-y-1">
-                        <div className="flex items-center space-x-3">
-                            <Calculator className="h-8 w-8 hidden sm:block" />
-                            <span className="font-bold text-xl tracking-tight hidden sm:block">GKPS App</span>
-                        </div>
-                        <span className="text-xs text-blue-200 mr-2">Auto-saved: {lastSaved}</span>
-                    </div>
-
-                    {/* BAGIAN KANAN (Nomor 1 sampai 10) */}
+                    <div className="flex items-center space-x-3"><Calculator className="h-8 w-8" /><span className="font-bold text-xl tracking-tight hidden sm:block">GKPS App</span></div>
                     <div className="flex items-center space-x-2">
-                        {/* 1. Online dan Sinkron */}
+                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
+                        
                         <button 
                            onClick={() => setShowDbPinModal(true)} 
                            className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
@@ -862,31 +851,16 @@
                             {syncStatus === 'connected' ? <Cloud className="h-5 w-5"/> : <CloudOff className="h-5 w-5"/>}
                         </button>
 
-                        {/* 2. Panduan */}
                         <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan"><HelpCircle className="h-5 w-5"/></button>
-                        
-                        {/* 3. Share QR */}
                         <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share QR"><QrCode className="h-5 w-5"/></button>
-                        
-                        {/* 4. Ganti PIN */}
                         <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN"><Lock className="h-5 w-5 text-yellow-300"/></button>
-                        
-                        {/* 5. Riwayat */}
                         <button onClick={() => setShowHistory(!showHistory)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Riwayat"><BarChart2 className="h-5 w-5"/></button>
-                        
-                        {/* 6. Simpan Arsip */}
                         <button onClick={saveToHistory} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan Arsip"><Save className="h-5 w-5"/></button>
-                        
-                        {/* 7 & 8. Backup dan Restore */}
                         <div className="hidden md:flex bg-blue-900 rounded p-1 space-x-1">
                             <button onClick={handleExport} className="p-1.5 hover:bg-blue-800 rounded transition" title="Backup"><Download className="h-4 w-4 text-green-300"/></button>
                             <button onClick={handleImportClick} className="p-1.5 hover:bg-blue-800 rounded transition" title="Restore"><Upload className="h-4 w-4 text-yellow-300"/></button>
                         </div>
-                        
-                        {/* 9. Reset */}
                         <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset"><Trash2 className="h-5 w-5"/></button>
-                        
-                        {/* 10. Cetak */}
                         <button onClick={handlePrint} className="flex items-center space-x-2 px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold"><Printer className="h-5 w-5"/><span>Cetak</span></button>
                     </div>
                   </div>
@@ -979,9 +953,7 @@
                 <div className="bg-white shadow-xl rounded-lg overflow-hidden print:shadow-none print:rounded-none">
                     <div className="border-b-4 border-blue-800 p-6 text-center print-header">
                         <h1 className="text-2xl font-bold uppercase">Formulir Setoran Kolekte</h1>
-                        <h2 className="text-xl font-semibold text-blue-800">
-                            {isPartonggoan ? "PARTONGGOAN " : ""}GKPS TANGERANG
-                        </h2>
+                        <h2 className="text-xl font-semibold text-blue-800">GKPS TANGERANG</h2>
                     </div>
 
                     <div className="p-6 bg-gray-50 border-b border-gray-200 print-grid-compact print:bg-white">
@@ -997,26 +969,12 @@
                             <div><label className="block text-sm font-medium">Pengkhotbah</label><input type="text" name="pengkhotbah" value={data.metadata.pengkhotbah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
                             <div>
                                 <label className="block text-sm font-medium mb-1">Kehadiran</label>
-                                {!isPartonggoan ? (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="text-center"><span className="text-xs text-gray-500">Pria</span><input type="number" name="pria" value={data.kehadiran.pria === '' ? '' : data.kehadiran.pria} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                        <div className="text-center"><span className="text-xs text-gray-500">Wanita</span><input type="number" name="wanita" value={data.kehadiran.wanita === '' ? '' : data.kehadiran.wanita} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-4 gap-2">
-                                        <div className="text-center"><span className="text-[10px] text-gray-500 uppercase">Bapa</span><input type="number" name="bapa" value={data.kehadiran.bapa === '' ? '' : data.kehadiran.bapa} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                        <div className="text-center"><span className="text-[10px] text-gray-500 uppercase">Inang</span><input type="number" name="inang" value={data.kehadiran.inang === '' ? '' : data.kehadiran.inang} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                        <div className="text-center"><span className="text-[10px] text-gray-500 uppercase">SM</span><input type="number" name="sm" value={data.kehadiran.sm === '' ? '' : data.kehadiran.sm} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                        <div className="text-center"><span className="text-[10px] text-gray-500 uppercase">Pemuda</span><input type="number" name="pemuda" value={data.kehadiran.pemuda === '' ? '' : data.kehadiran.pemuda} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                    </div>
-                                )}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="text-center"><span className="text-xs text-gray-500">Pria</span><input type="number" name="pria" value={data.kehadiran.pria === '' ? '' : data.kehadiran.pria} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                    <div className="text-center"><span className="text-xs text-gray-500">Wanita</span><input type="number" name="wanita" value={data.kehadiran.wanita === '' ? '' : data.kehadiran.wanita} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                </div>
                             </div>
-                            <div className="text-right text-xs font-bold text-gray-700 mt-1">
-                                Total: {!isPartonggoan 
-                                    ? (data.kehadiran.pria||0) + (data.kehadiran.wanita||0) 
-                                    : (data.kehadiran.bapa||0) + (data.kehadiran.inang||0) + (data.kehadiran.sm||0) + (data.kehadiran.pemuda||0)
-                                } Jiwa
-                            </div>
+                            <div className="text-right text-xs font-bold text-gray-700 mt-1">Total: {(data.kehadiran.pria||0) + (data.kehadiran.wanita||0)} Jiwa</div>
                         </div>
                     </div>
 
@@ -1092,9 +1050,7 @@
                             <div className="p-6 overflow-y-auto modal-scroll flex-grow bg-white">
                                 <div className="border-b-4 border-blue-800 p-4 text-center mb-6">
                                     <h1 className="text-xl font-bold uppercase">Formulir Setoran Kolekte</h1>
-                                    <h2 className="text-lg font-semibold text-blue-800">
-                                        {viewData.metadata.jenisIbadah === "Partonggoan" ? "PARTONGGOAN " : ""}GKPS TANGERANG
-                                    </h2>
+                                    <h2 className="text-lg font-semibold text-blue-800">GKPS TANGERANG</h2>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-6 mb-6">
@@ -1108,27 +1064,11 @@
                                         <div><label className="text-xs text-gray-500 uppercase">Pengkhotbah</label><div className="font-bold">{viewData.metadata.pengkhotbah || '-'}</div></div>
                                         <div>
                                             <label className="text-xs text-gray-500 uppercase mb-1 block">Kehadiran</label>
-                                            
-                                            {viewData.metadata.jenisIbadah !== "Partonggoan" ? (
-                                                <div className="grid grid-cols-2 gap-4 bg-gray-50 p-2 rounded border">
-                                                    <div className="text-center"><span className="text-[10px] text-gray-400">Pria</span><div className="font-bold">{viewData.kehadiran.pria || 0}</div></div>
-                                                    <div className="text-center"><span className="text-[10px] text-gray-400">Wanita</span><div className="font-bold">{viewData.kehadiran.wanita || 0}</div></div>
-                                                </div>
-                                            ) : (
-                                                <div className="grid grid-cols-4 gap-2 bg-gray-50 p-2 rounded border">
-                                                    <div className="text-center"><span className="text-[10px] text-gray-400">Bapa</span><div className="font-bold">{viewData.kehadiran.bapa || 0}</div></div>
-                                                    <div className="text-center"><span className="text-[10px] text-gray-400">Inang</span><div className="font-bold">{viewData.kehadiran.inang || 0}</div></div>
-                                                    <div className="text-center"><span className="text-[10px] text-gray-400">SM</span><div className="font-bold">{viewData.kehadiran.sm || 0}</div></div>
-                                                    <div className="text-center"><span className="text-[10px] text-gray-400">Pemuda</span><div className="font-bold">{viewData.kehadiran.pemuda || 0}</div></div>
-                                                </div>
-                                            )}
-                                            
-                                            <div className="text-right text-xs font-bold mt-1">
-                                                Total: {viewData.metadata.jenisIbadah !== "Partonggoan" 
-                                                    ? (viewData.kehadiran.pria||0)+(viewData.kehadiran.wanita||0) 
-                                                    : (viewData.kehadiran.bapa||0)+(viewData.kehadiran.inang||0)+(viewData.kehadiran.sm||0)+(viewData.kehadiran.pemuda||0)
-                                                } Jiwa
+                                            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-2 rounded border">
+                                                <div className="text-center"><span className="text-[10px] text-gray-400">Pria</span><div className="font-bold">{viewData.kehadiran.pria}</div></div>
+                                                <div className="text-center"><span className="text-[10px] text-gray-400">Wanita</span><div className="font-bold">{viewData.kehadiran.wanita}</div></div>
                                             </div>
+                                            <div className="text-right text-xs font-bold mt-1">Total: {(viewData.kehadiran.pria||0)+(viewData.kehadiran.wanita||0)} Jiwa</div>
                                         </div>
                                     </div>
                                 </div>

@@ -5,23 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Kolekte GKPS - Aman & Standalone</title>
     
-    <!-- 1. ENGINE: React, ReactDOM, Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Library QR Code Generator (Stabil & Offline) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
-    <!-- Library Export Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
-    <!-- 2. FIREBASE ENGINE (Lengkap dengan Auth & Firestore) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script> 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
-    <!-- 3. STYLE: Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -39,93 +34,37 @@
         }
     </script>
 
-    <!-- Style Khusus Print & Layout -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         
-        /* Modal Scrollbar */
         .modal-scroll::-webkit-scrollbar { width: 8px; }
         .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .modal-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
         
-        /* FIX SCROLLING SMOOTH DI HP */
         .scrolling-touch {
-            -webkit-overflow-scrolling: touch; /* Kunci agar scroll licin di iOS/Mobile */
+            -webkit-overflow-scrolling: touch; 
             overflow-x: auto;
         }
 
-        /* --- OPTIMASI KHUSUS CETAK (PRINT CSS) --- */
         @media print {
-            @page { 
-                size: A4; 
-                margin: 5mm; 
-            }
-            body { 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact; 
-                font-size: 11px; 
-                background-color: white;
-            }
-            
+            @page { size: A4; margin: 5mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11px; background-color: white; }
             .no-print, nav, button, .guidance-box, .maintenance-screen { display: none !important; }
-            
-            main { 
-                width: 100%; 
-                max-width: none; 
-                padding: 0; 
-                margin: 0; 
-            }
-            
-            .print-header { 
-                padding: 10px !important; 
-                border-bottom-width: 2px !important; 
-            }
+            main { width: 100%; max-width: none; padding: 0; margin: 0; }
+            .print-header { padding: 10px !important; border-bottom-width: 2px !important; }
             .print-header h1 { font-size: 16px !important; margin-bottom: 2px; }
             .print-header h2 { font-size: 14px !important; }
             .print-header p { display: none; }
-
-            .print-grid-compact { 
-                display: grid; 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 8px !important; 
-                padding: 8px !important;
-            }
-            .print-input-compact {
-                border: none !important;
-                padding: 0 !important;
-                height: auto !important;
-                font-weight: bold;
-                font-size: 11px;
-            }
+            .print-grid-compact { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px !important; padding: 8px !important; }
+            .print-input-compact { border: none !important; padding: 0 !important; height: auto !important; font-weight: bold; font-size: 11px; }
             label { font-size: 9px !important; text-transform: uppercase; color: #666; }
-
             table { font-size: 10px !important; }
             th, td { padding: 4px 2px !important; }
             input[type="number"] { font-size: 10px !important; }
-
-            .print-signature-area { 
-                margin-top: 10px !important; 
-                padding: 10px !important; 
-                border-top: 1px solid #ccc;
-                page-break-inside: avoid; 
-            }
+            .print-signature-area { margin-top: 10px !important; padding: 10px !important; border-top: 1px solid #ccc; page-break-inside: avoid; }
             .print-signature-box { height: 40px !important; } 
-            .print-signature-input { 
-                padding-top: 5px !important; 
-                font-size: 12px !important;
-            }
-            
-            .print-security-footer {
-                display: block !important;
-                font-size: 9px !important;
-                text-align: center;
-                border: 1px solid #ddd;
-                padding: 4px;
-                margin-top: 8px;
-                page-break-inside: avoid;
-            }
-
+            .print-signature-input { padding-top: 5px !important; font-size: 12px !important; }
             ::-webkit-scrollbar { display: none; }
         }
     </style>
@@ -133,7 +72,6 @@
 <body class="bg-gray-100">
     <div id="root"></div>
 
-    <!-- LOGIKA APLIKASI -->
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
@@ -146,8 +84,6 @@
         const Printer = ({ className }) => <IconBase className={className}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></IconBase>;
         const Trash2 = ({ className }) => <IconBase className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconBase>;
         const Calculator = ({ className }) => <IconBase className={className}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></IconBase>;
-        const FileText = ({ className }) => <IconBase className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></IconBase>;
-        const CheckCircle = ({ className }) => <IconBase className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconBase>;
         const BarChart2 = ({ className }) => <IconBase className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></IconBase>;
         const History = ({ className }) => <IconBase className={className}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></IconBase>;
         const Download = ({ className }) => <IconBase className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></IconBase>;
@@ -160,10 +96,8 @@
         const Cloud = ({ className }) => <IconBase className={className}><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></IconBase>;
         const CloudOff = ({ className }) => <IconBase className={className}><path d="M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0 4 15h9a5 5 0 0 0 1.7-.3"></path><line x1="1" y1="1" x2="23" y2="23"></line></IconBase>;
         const Settings = ({ className }) => <IconBase className={className}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></IconBase>;
-        const Key = ({ className }) => <IconBase className={className}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></IconBase>;
         const Edit = ({ className }) => <IconBase className={className}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>;
         const FileSpreadsheet = ({ className }) => <IconBase className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></IconBase>;
-        const AlertTriangle = ({ className }) => <IconBase className={className}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></IconBase>;
 
         // --- DATA KONSTAN ---
         const DENOMINATIONS = [
@@ -185,11 +119,7 @@
           { id: 'k5', name: 'Kantong HBN', color: 'bg-orange-50 border-orange-200' },
         ];
 
-        const SECTORS = [
-            "Sektor I", "Sektor II", "Sektor III", "Sektor IV", "Sektor V", "Sektor VI",
-            "Sektor VII", "Sektor VIII", "Sektor IX", "Sektor X", "Sektor XI", "Sektor XII"
-        ];
-
+        const SECTORS = ["Sektor I", "Sektor II", "Sektor III", "Sektor IV", "Sektor V", "Sektor VI", "Sektor VII", "Sektor VIII", "Sektor IX", "Sektor X", "Sektor XI", "Sektor XII"];
         const formatRupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
         // --- KOMPONEN MAINTENANCE SCREEN ---
@@ -200,15 +130,11 @@
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight">Sistem Sedang Pemeliharaan</h1>
                 <div className="bg-white/10 px-6 py-4 rounded-lg max-w-lg backdrop-blur-md border border-white/20">
-                    <p className="text-lg text-blue-100 font-medium">
-                        {message || "Kami sedang melakukan peningkatan sistem untuk pelayanan yang lebih baik. Mohon kembali lagi beberapa saat lagi."}
-                    </p>
+                    <p className="text-lg text-blue-100 font-medium">{message || "Kami sedang melakukan peningkatan sistem untuk pelayanan yang lebih baik."}</p>
                 </div>
                 <div className="mt-8 flex items-center text-sm opacity-50 space-x-2">
-                    <CloudOff className="w-4 h-4"/>
-                    <span>Tim Multimedia & IT GKPS Tangerang</span>
+                    <CloudOff className="w-4 h-4"/><span>Tim Multimedia & IT GKPS Tangerang</span>
                 </div>
-                <div className="absolute bottom-5 text-xs text-gray-500">System ID: GKPS-MNT-2025</div>
             </div>
         );
 
@@ -217,11 +143,8 @@
           if (!history || history.length === 0) return <div className="text-center text-gray-400 p-4">Belum ada data riwayat.</div>;
           
           let data = [];
-          if (selectedIds && selectedIds.size > 0) {
-              data = history.filter(h => selectedIds.has(h.id)).reverse();
-          } else {
-              data = history.slice(0, 5).reverse();
-          }
+          if (selectedIds && selectedIds.size > 0) { data = history.filter(h => selectedIds.has(h.id)).reverse(); } 
+          else { data = history.slice(0, 5).reverse(); }
           
           const maxVal = Math.max(...data.map(d => d.total));
           const chartHeight = 160; 
@@ -256,37 +179,17 @@
                       const labelText = getLabel(item.jenis);
 
                       return (
-                        <div 
-                            key={idx} 
-                            className="flex flex-col items-center group relative w-24 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                            onClick={() => onBarClick(item)} 
-                        >
-                          <div className="absolute bottom-full mb-2 w-full text-center z-10">
-                            <span className="inline-block px-1 bg-white/80 rounded text-[10px] sm:text-xs font-bold text-gray-800 whitespace-nowrap shadow-sm">
-                                {formatRupiah(item.total)}
-                            </span>
-                          </div>
+                        <div key={idx} className="flex flex-col items-center group relative w-24 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform" onClick={() => onBarClick(item)} >
+                          <div className="absolute bottom-full mb-2 w-full text-center z-10"><span className="inline-block px-1 bg-white/80 rounded text-[10px] sm:text-xs font-bold text-gray-800 whitespace-nowrap shadow-sm">{formatRupiah(item.total)}</span></div>
                           <div className={`w-full rounded-t-sm transition-all duration-500 ${barColor}`} style={{ height: `${height}px` }}></div>
-                          
                           <div className="mt-2 w-full flex flex-col items-center">
-                             <div className="bg-gray-100 px-2 py-1 rounded text-[10px] font-bold text-gray-700 shadow-sm border border-gray-200 hover:bg-blue-100">
-                                {new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                             </div>
-                             <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-full mt-1 ${barColor}`}>
-                                {labelText}
-                             </span>
+                             <div className="bg-gray-100 px-2 py-1 rounded text-[10px] font-bold text-gray-700 shadow-sm border border-gray-200 hover:bg-blue-100">{new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
+                             <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-full mt-1 ${barColor}`}>{labelText}</span>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-                <div className="flex flex-wrap justify-center gap-3 mt-4 text-xs text-gray-600 border-t pt-2">
-                    <div className="flex items-center"><span className="w-3 h-3 bg-cyan-500 rounded-full mr-1"></span> Pagi</div>
-                    <div className="flex items-center"><span className="w-3 h-3 bg-yellow-500 rounded-full mr-1"></span> Siang</div>
-                    <div className="flex items-center"><span className="w-3 h-3 bg-orange-500 rounded-full mr-1"></span> Sore</div>
-                    <div className="flex items-center"><span className="w-3 h-3 bg-emerald-500 rounded-full mr-1"></span> Sektor</div>
-                    <div className="flex items-center"><span className="w-3 h-3 bg-purple-500 rounded-full mr-1"></span> Partonggoan</div>
                 </div>
             </div>
           );
@@ -295,22 +198,11 @@
         // --- KOMPONEN QR CODE CANVAS ---
         const QrCodeCanvas = ({ value }) => {
             const canvasRef = useRef(null);
-
             useEffect(() => {
                 if (canvasRef.current && value) {
-                    try {
-                        new QRious({
-                            element: canvasRef.current,
-                            value: value,
-                            size: 250, 
-                            level: 'H' 
-                        });
-                    } catch (e) {
-                        console.error("Gagal membuat QR:", e);
-                    }
+                    try { new QRious({ element: canvasRef.current, value: value, size: 250, level: 'H' }); } catch (e) { console.error("Gagal membuat QR:", e); }
                 }
             }, [value]);
-
             return <canvas ref={canvasRef} className="border shadow-sm rounded"/>;
         };
 
@@ -325,7 +217,7 @@
           measurementId: "G-6JHDXEJD3D"
         });
 
-        // --- STATE AWAL DEFAULT (ANAK DIHAPUS) ---
+        // --- STATE AWAL DEFAULT (DIUBAH UNTUK PARTONGGOAN) ---
         const INITIAL_STATE_TEMPLATE = {
             metadata: {
               tanggal: new Date().toISOString().split('T')[0],
@@ -335,7 +227,7 @@
               liturgis: '',
               jenisIbadah: 'Minggu Pagi',
             },
-            kehadiran: { pria: 0, wanita: 0 }, 
+            kehadiran: { pria: 0, wanita: 0, bapa: 0, inang: 0, sm: 0, pemuda: 0 }, 
             uang: KANTONG_LABELS.reduce((acc, k) => {
               acc[k.id] = DENOMINATIONS.reduce((dAcc, d) => ({ ...dAcc, [d.value]: 0 }), {});
               return acc;
@@ -350,16 +242,12 @@
         // --- FUNGSI MERGE DATA YANG AMAN ---
         const validateAndFixData = (data) => {
             if (!data) return INITIAL_STATE_TEMPLATE;
-            
             const safeUang = { ...INITIAL_STATE_TEMPLATE.uang };
             if (data.uang) {
                 Object.keys(safeUang).forEach(key => {
-                    if (data.uang[key]) {
-                        safeUang[key] = { ...safeUang[key], ...data.uang[key] };
-                    }
+                    if (data.uang[key]) safeUang[key] = { ...safeUang[key], ...data.uang[key] };
                 });
             }
-
             return {
                 metadata: { ...INITIAL_STATE_TEMPLATE.metadata, ...data.metadata },
                 kehadiran: { ...INITIAL_STATE_TEMPLATE.kehadiran, ...data.kehadiran },
@@ -374,16 +262,11 @@
             const saved = localStorage.getItem('gkps_kolekte_data');
             return saved ? validateAndFixData(JSON.parse(saved)) : INITIAL_STATE_TEMPLATE;
           });
-
           const [history, setHistory] = useState(() => {
             const savedHist = localStorage.getItem('gkps_kolekte_history');
             return savedHist ? JSON.parse(savedHist) : [];
           });
-
-          const [appPin, setAppPin] = useState(() => {
-              return localStorage.getItem('gkps_app_pin') || '123456';
-          });
-
+          const [appPin, setAppPin] = useState(() => localStorage.getItem('gkps_app_pin') || '123456');
           const [fbConfigRaw, setFbConfigRaw] = useState(() => localStorage.getItem('gkps_fb_config') || DEFAULT_FIREBASE_CONFIG);
           const [db, setDb] = useState(null);
           const [authUser, setAuthUser] = useState(null);
@@ -393,549 +276,319 @@
           const [showDbPinModal, setShowDbPinModal] = useState(false); 
           const [dbPinInput, setDbPinInput] = useState('');
           const lastEditTime = useRef(0); 
-
-          const [lastSaved, setLastSaved] = useState(null);
+          const [lastSaved, setLastSaved] = useState(new Date().toLocaleTimeString('id-ID'));
           const [showHistory, setShowHistory] = useState(false);
           const [showHelp, setShowHelp] = useState(false);
           const [showPinModal, setShowPinModal] = useState(false); 
           const [showShareModal, setShowShareModal] = useState(false); 
-          
           const [urlToShare, setUrlToShare] = useState('https://k-gkps-tangerang.vercel.app/');
           const [viewData, setViewData] = useState(null);
           const [selectedIds, setSelectedIds] = useState(new Set()); 
           const fileInputRef = useRef(null);
           const [pinForm, setPinForm] = useState({ old: '', new: '', confirm: '' });
-
-          // --- STATE BARU: MAINTENANCE ---
           const [maintenanceMode, setMaintenanceMode] = useState(false);
           const [maintenanceMsg, setMaintenanceMsg] = useState("");
 
-          // INIT FIREBASE
+          // VARIABEL KONDISI PARTONGGOAN
+          const isPartonggoan = data.metadata.jenisIbadah === "Partonggoan";
+
           useEffect(() => {
               if (fbConfigRaw) {
                   try {
                       const config = JSON.parse(fbConfigRaw);
-                      if (!firebase.apps.length) {
-                          firebase.initializeApp(config);
-                      } else {
-                          firebase.app(); 
-                      }
+                      if (!firebase.apps.length) { firebase.initializeApp(config); } else { firebase.app(); }
                       const firestore = firebase.firestore();
                       setDb(firestore);
-                      
                       const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-                          if (user) {
-                              setAuthUser(user);
-                              setSyncStatus('connected');
-                              setLastErrorMessage('');
-                          } else {
-                              firebase.auth().signInAnonymously().catch((error) => {
-                                  setSyncStatus('error');
-                                  setLastErrorMessage(`Auth Error: ${error.message}`);
-                              });
-                          }
+                          if (user) { setAuthUser(user); setSyncStatus('connected'); setLastErrorMessage(''); } 
+                          else { firebase.auth().signInAnonymously().catch((error) => { setSyncStatus('error'); setLastErrorMessage(`Auth Error: ${error.message}`); }); }
                       });
                       return () => unsubscribe();
-                  } catch (e) {
-                      setSyncStatus('error');
-                      setLastErrorMessage(`Config Error: ${e.message}`);
-                  }
+                  } catch (e) { setSyncStatus('error'); setLastErrorMessage(`Config Error: ${e.message}`); }
               }
           }, [fbConfigRaw]);
 
-          // --- LOGIC MAINTENANCE LISTENER ---
-          // Ini mendengarkan perubahan di koleksi 'gkps_config' dokumen 'global'
           useEffect(() => {
               if (!db) return;
-              
-              // DI SINI LOKASINYA:
-              // Aplikasi mencari collection bernama 'gkps_config' dan dokumen bernama 'global'
               const configRef = db.collection('gkps_config').doc('global');
-              
               const unsubConfig = configRef.onSnapshot((doc) => {
-                  if (doc.exists) {
-                      const conf = doc.data();
-                      // Cek field 'maintenance' (boolean) dan 'message' (string)
-                      setMaintenanceMode(conf.maintenance === true);
-                      setMaintenanceMsg(conf.message || "");
-                  } else {
-                      // Default jika belum ada config: Tidak Maintenance
-                      setMaintenanceMode(false);
-                  }
-              }, (err) => console.log("Config sync err (Abaikan jika offline):", err));
-
+                  if (doc.exists) { const conf = doc.data(); setMaintenanceMode(conf.maintenance === true); setMaintenanceMsg(conf.message || ""); } 
+                  else { setMaintenanceMode(false); }
+              }, (err) => console.log("Config sync err:", err));
               return () => unsubConfig();
           }, [db]);
 
-
-          // REALTIME SYNC
           useEffect(() => {
               if (!db || !authUser) return;
-
               const docId = `${data.metadata.tanggal}_${data.metadata.jenisIbadah.replace(/\s+/g, '_')}`;
               const docRef = db.collection('gkps_transactions').doc(docId);
-
               const unsubscribe = docRef.onSnapshot((doc) => {
-                  setSyncStatus('connected');
-                  setLastErrorMessage('');
+                  setSyncStatus('connected'); setLastErrorMessage('');
                   const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
                   if (doc.exists && source === "Server") {
-                      if (Date.now() - lastEditTime.current < 10000) {
-                          console.log("Update server diabaikan: User sedang aktif mengetik.");
-                          return;
-                      }
-                      const remoteData = doc.data();
-                      const safeData = validateAndFixData(remoteData);
-                      if (JSON.stringify(safeData) !== JSON.stringify(data)) {
-                          setData(safeData);
-                      }
+                      if (Date.now() - lastEditTime.current < 10000) return;
+                      const safeData = validateAndFixData(doc.data());
+                      if (JSON.stringify(safeData) !== JSON.stringify(data)) { setData(safeData); }
                   }
-              }, (error) => {
-                  console.error(error);
-                  setSyncStatus('error');
-              });
+              }, (error) => { setSyncStatus('error'); });
 
               const saveDataToServer = setTimeout(() => {
-                  if (authUser) {
-                      docRef.set(data, { merge: true })
-                          .then(() => setSyncStatus('connected'))
-                          .catch((e) => setSyncStatus('error'));
-                  }
+                  if (authUser) { docRef.set(data, { merge: true }).then(() => setSyncStatus('connected')).catch(() => setSyncStatus('error')); }
               }, 2000);
 
-              return () => {
-                  unsubscribe();
-                  clearTimeout(saveDataToServer);
-              };
+              return () => { unsubscribe(); clearTimeout(saveDataToServer); };
           }, [data, db, authUser]);
 
-          // SYNC RIWAYAT
           useEffect(() => {
               if (!db || !authUser) return;
               const historyRef = db.collection('gkps_data').doc('history_archive');
-              
               const unsubscribe = historyRef.onSnapshot((doc) => {
                   if (doc.exists) {
                       const remoteHistory = doc.data().entries || [];
-                      if (JSON.stringify(remoteHistory) !== JSON.stringify(history)) {
-                          setHistory(remoteHistory);
-                      }
+                      if (JSON.stringify(remoteHistory) !== JSON.stringify(history)) { setHistory(remoteHistory); }
                   }
               }, (error) => console.error("History Sync Error:", error));
-
               return () => unsubscribe();
           }, [db, authUser]);
 
           const updateCloudHistory = (newHistory) => {
-              if (db && authUser) {
-                  db.collection('gkps_data').doc('history_archive').set({ entries: newHistory })
-                    .catch(e => console.error("Gagal simpan riwayat Cloud:", e));
-              }
+              if (db && authUser) { db.collection('gkps_data').doc('history_archive').set({ entries: newHistory }).catch(e => console.error("Gagal simpan riwayat Cloud:", e)); }
           };
 
-          // STORAGE EFFECTS
           useEffect(() => {
             localStorage.setItem('gkps_kolekte_data', JSON.stringify(data));
             setLastSaved(new Date().toLocaleTimeString('id-ID'));
           }, [data]);
 
-          useEffect(() => {
-            localStorage.setItem('gkps_kolekte_history', JSON.stringify(history));
-          }, [history]);
+          useEffect(() => { localStorage.setItem('gkps_kolekte_history', JSON.stringify(history)); }, [history]);
+          useEffect(() => { localStorage.setItem('gkps_app_pin', appPin); }, [appPin]);
 
-          useEffect(() => {
-            localStorage.setItem('gkps_app_pin', appPin);
-          }, [appPin]);
-
-          const handleMetaChange = (e) => {
-              lastEditTime.current = Date.now(); 
-              setData({ ...data, metadata: { ...data.metadata, [e.target.name]: e.target.value } });
-          };
-          
-          const handleAttChange = (e) => {
-              lastEditTime.current = Date.now(); 
-              const val = e.target.value;
-              const valToStore = val === '' ? '' : parseInt(val);
-              setData(prev => ({ ...prev, kehadiran: { ...prev.kehadiran, [e.target.name]: valToStore } }));
-          };
-
-          const handleSignChange = (e) => {
-              lastEditTime.current = Date.now();
-              setData({ ...data, tandaTangan: { ...data.tandaTangan, [e.target.name]: e.target.value } });
-          };
-          
-          const handleMoneyChange = (kantongId, denomValue, qty) => {
+          const handleMetaChange = (e) => { lastEditTime.current = Date.now(); setData({ ...data, metadata: { ...data.metadata, [e.target.name]: e.target.value } }); };
+          const handleAttChange = (e) => { lastEditTime.current = Date.now(); const val = e.target.value === '' ? '' : parseInt(e.target.value); setData(prev => ({ ...prev, kehadiran: { ...prev.kehadiran, [e.target.name]: val } })); };
+          const handleSignChange = (e) => { lastEditTime.current = Date.now(); setData({ ...data, tandaTangan: { ...data.tandaTangan, [e.target.name]: e.target.value } }); };
+          const handleMoneyChange = (kId, dVal, qty) => {
             lastEditTime.current = Date.now();
             const val = qty === '' ? '' : parseInt(qty);
-            setData(prev => {
-                const prevUang = prev.uang || {};
-                const prevKantong = prevUang[kantongId] || {};
-                return {
-                    ...prev,
-                    uang: {
-                        ...prevUang,
-                        [kantongId]: {
-                            ...prevKantong,
-                            [denomValue]: val
-                        }
-                    }
-                };
-            });
+            setData(prev => ({ ...prev, uang: { ...prev.uang, [kId]: { ...prev.uang[kId], [dVal]: val } } }));
           };
 
-          const calculateBagTotal = (kantongId, sourceData = data) => {
-            if (!sourceData.uang || !sourceData.uang[kantongId]) return 0;
-            return DENOMINATIONS.reduce((total, d) => {
-                const rawVal = sourceData.uang[kantongId][d.value];
-                const val = (rawVal === '' || rawVal === undefined) ? 0 : rawVal;
-                return total + (val * d.value);
-            }, 0);
+          const calculateBagTotal = (kId, sourceData = data) => {
+            if (!sourceData.uang || !sourceData.uang[kId]) return 0;
+            return DENOMINATIONS.reduce((total, d) => total + ((sourceData.uang[kId][d.value] || 0) * d.value), 0);
           };
+          const calculateGrandTotal = (sourceData = data) => KANTONG_LABELS.reduce((total, k) => total + calculateBagTotal(k.id, sourceData), 0);
 
-          const calculateGrandTotal = (sourceData = data) => {
-            return KANTONG_LABELS.reduce((total, k) => total + calculateBagTotal(k.id, sourceData), 0);
+          // PERHITUNGAN TOTAL JIWA (DINAMIS SESUAI IBADAH)
+          const calculateTotalJiwa = (sourceData = data) => {
+              const k = sourceData.kehadiran;
+              if (sourceData.metadata.jenisIbadah === "Partonggoan") return (k.bapa||0) + (k.inang||0) + (k.sm||0) + (k.pemuda||0);
+              return (k.pria||0) + (k.wanita||0);
           };
 
           const handleExport = () => {
              const blob = new Blob([JSON.stringify({ data, history, backupDate: new Date().toISOString(), appName: 'GKPS Kolekte App' }, null, 2)], { type: "application/json" });
-             const url = URL.createObjectURL(blob);
-             const link = document.createElement("a");
-             link.href = url;
-             link.download = `GKPS_Backup_${new Date().toISOString().split('T')[0]}.json`;
-             document.body.appendChild(link);
-             link.click();
-             document.body.removeChild(link);
+             const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `GKPS_Backup_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
           };
 
-          // --- HELPER UNTUK EXPORT SHEET PER ITEM ---
           const createSheetFromData = (itemData) => {
              const wsData = [];
-             const metadata = itemData.metadata;
-             const kehadiran = itemData.kehadiran;
-             const uang = itemData.uang;
-             const ttd = itemData.tandaTangan;
+             const metadata = itemData.metadata; const kehadiran = itemData.kehadiran; const uang = itemData.uang; const ttd = itemData.tandaTangan;
+             const isP = metadata.jenisIbadah === "Partonggoan";
 
              wsData.push(["TANGGAL", metadata.tanggal, "SEKTOR", metadata.sektor]);
-             wsData.push(["FORMULIR SETORAN KOLEKTE", "", "GKPS TANGERANG"]);
+             wsData.push(["FORMULIR SETORAN KOLEKTE", "", isP ? "PARTONGGOAN GKPS TANGERANG" : "GKPS TANGERANG"]);
              wsData.push(["JENIS IBADAH", metadata.jenisIbadah]);
              wsData.push(["PENGKHOTBAH", metadata.pengkhotbah]);
              wsData.push([]);
              
-             // Kehadiran (Tanpa Anak)
-             const totalJiwa = (kehadiran.pria || 0) + (kehadiran.wanita || 0);
-             wsData.push(["KEHADIRAN", "Pria", kehadiran.pria]);
-             wsData.push(["", "Wanita", kehadiran.wanita]);
-             wsData.push(["", "Total", totalJiwa + " Jiwa"]);
-             wsData.push([]);
-
-             wsData.push(["MINGGU KE/NAMA", metadata.minggu]);
-             wsData.push([]);
-
-             const tableHeader = ["Pecahan", ...KANTONG_LABELS.map(k => k.name)];
-             wsData.push(tableHeader);
+             if (!isP) {
+                 wsData.push(["KEHADIRAN", "Pria", kehadiran.pria]); wsData.push(["", "Wanita", kehadiran.wanita]);
+             } else {
+                 wsData.push(["KEHADIRAN", "Bapa", kehadiran.bapa]); wsData.push(["", "Inang", kehadiran.inang]);
+                 wsData.push(["", "SM", kehadiran.sm]); wsData.push(["", "Pemuda", kehadiran.pemuda]);
+             }
+             wsData.push(["", "Total", calculateTotalJiwa(itemData) + " Jiwa"]); wsData.push([]);
+             wsData.push(["MINGGU KE/NAMA", metadata.minggu]); wsData.push([]);
+             wsData.push(["Pecahan", ...KANTONG_LABELS.map(k => k.name)]);
 
              DENOMINATIONS.forEach(d => {
-                 const row = [d.label];
-                 KANTONG_LABELS.forEach(k => {
-                     row.push(uang[k.id]?.[d.value] || 0);
-                 });
-                 wsData.push(row);
+                 const row = [d.label]; KANTONG_LABELS.forEach(k => { row.push(uang[k.id]?.[d.value] || 0); }); wsData.push(row);
              });
 
-             const totalRow = ["TOTAL"];
-             KANTONG_LABELS.forEach(k => {
-                 totalRow.push(formatRupiah(calculateBagTotal(k.id, itemData)));
-             });
-             wsData.push(totalRow);
-             wsData.push([]);
-
-             wsData.push(["TOTAL KESELURUHAN:", formatRupiah(calculateGrandTotal(itemData))]);
-             wsData.push([]);
-             wsData.push([]);
-
-             wsData.push(["PENGESAHAN"]);
-             wsData.push(["PENGHITUNG 1", "PENGHITUNG 2", "BENDAHARA"]);
-             wsData.push(["(Signed)", "(Signed)", "(Signed)"]);
+             const totalRow = ["TOTAL"]; KANTONG_LABELS.forEach(k => { totalRow.push(formatRupiah(calculateBagTotal(k.id, itemData))); });
+             wsData.push(totalRow); wsData.push([]);
+             wsData.push(["TOTAL KESELURUHAN:", formatRupiah(calculateGrandTotal(itemData))]); wsData.push([], []);
+             wsData.push(["PENGESAHAN"]); wsData.push(["PENGHITUNG 1", "PENGHITUNG 2", "BENDAHARA"]); wsData.push(["(Signed)", "(Signed)", "(Signed)"]);
              wsData.push([ttd.penghitung1 || "-", ttd.penghitung2 || "-", ttd.bendahara || "-"]);
 
-             const ws = XLSX.utils.aoa_to_sheet(wsData);
-             ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}];
-             return ws;
+             const ws = XLSX.utils.aoa_to_sheet(wsData); ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}]; return ws;
           };
 
-          // --- EXPORT SATUAN ---
-          const handleExportExcel = (historyItem) => {
-             const wb = XLSX.utils.book_new();
-             const ws = createSheetFromData(historyItem.details);
-             XLSX.utils.book_append_sheet(wb, ws, "Laporan Kolekte");
-             XLSX.writeFile(wb, `Laporan_GKPS_${historyItem.details.metadata.tanggal}.xlsx`);
-          };
+          const handleExportExcel = (historyItem) => { const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, createSheetFromData(historyItem.details), "Laporan Kolekte"); XLSX.writeFile(wb, `Laporan_GKPS_${historyItem.details.metadata.tanggal}.xlsx`); };
 
-          // --- EXPORT BULANAN (BARU) ---
           const handleExportMonthlyExcel = () => {
             const monthInput = prompt("Masukkan Bulan dan Tahun untuk Export (Format: YYYY-MM), contoh: 2023-10");
             if (!monthInput) return;
-
-            // Filter riwayat berdasarkan bulan
             const filtered = history.filter(h => h.date && h.date.startsWith(monthInput));
-            
-            if (filtered.length === 0) {
-                alert("Tidak ada data riwayat pada bulan tersebut.");
-                return;
-            }
-
+            if (filtered.length === 0) return alert("Tidak ada data riwayat pada bulan tersebut.");
             const wb = XLSX.utils.book_new();
-            
-            // Loop setiap data dan buat sheet baru
             filtered.forEach((item, index) => {
                 const ws = createSheetFromData(item.details);
-                
-                // Buat nama sheet unik: Tgl_JenisIbadah
                 const day = item.details.metadata.tanggal.split('-')[2];
-                const type = item.details.metadata.jenisIbadah.split(' ')[1] || 'Ibadah'; // Ambil kata kedua (Pagi/Siang/Sore)
+                const type = item.details.metadata.jenisIbadah.split(' ')[1] || 'Ibadah';
                 let sheetName = `${day}_${type}`;
-                
-                // Cegah nama sheet duplikat
-                if (wb.SheetNames.includes(sheetName)) {
-                    sheetName = `${sheetName}_${index+1}`;
-                }
-                
+                if (wb.SheetNames.includes(sheetName)) sheetName = `${sheetName}_${index+1}`;
                 XLSX.utils.book_append_sheet(wb, ws, sheetName);
             });
-
             XLSX.writeFile(wb, `Laporan_Bulanan_GKPS_${monthInput}.xlsx`);
           };
 
           const handleImportClick = () => fileInputRef.current.click();
           const handleFileChange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
+            const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
             reader.onload = (event) => {
                 try {
                     const parsed = JSON.parse(event.target.result);
                     if (parsed.appName === 'GKPS Kolekte App') {
                         if (confirm(`Restore data?`)) {
-                            setData(validateAndFixData(parsed.data));
-                            const newHistory = parsed.history;
-                            setHistory(newHistory);
-                            updateCloudHistory(newHistory); // Sync to Cloud
-                            alert("Berhasil!");
+                            setData(validateAndFixData(parsed.data)); const newHistory = parsed.history; setHistory(newHistory); updateCloudHistory(newHistory); alert("Berhasil!");
                         }
                     } else alert("File tidak valid!");
-                } catch (err) { alert("File rusak."); }
-                e.target.value = null; 
-            };
-            reader.readAsText(file);
+                } catch (err) { alert("File rusak."); } e.target.value = null; 
+            }; reader.readAsText(file);
           };
 
-          const resetData = () => { if (confirm('Reset form?')) { setData(INITIAL_STATE_TEMPLATE); localStorage.removeItem('gkps_kolekte_data'); } };
-          
+          const resetData = () => { if (confirm('Kosongkan formulir seketika?')) { setData(INITIAL_STATE_TEMPLATE); localStorage.removeItem('gkps_kolekte_data'); } };
           const saveToHistory = () => { 
               if (confirm('Simpan ke Riwayat?')) { 
                   const newEntry = { id: Date.now(), date: data.metadata.tanggal, jenis: data.metadata.jenisIbadah, total: calculateGrandTotal(data), details: data };
-                  const newHistory = [newEntry, ...history];
-                  setHistory(newHistory); 
-                  updateCloudHistory(newHistory); // Sync to Cloud
-                  alert('Tersimpan!'); 
+                  const newHistory = [newEntry, ...history]; setHistory(newHistory); updateCloudHistory(newHistory); alert('Tersimpan!'); 
               } 
           };
-          
           const handlePrint = () => window.print();
 
-          const toggleSelectId = (id) => {
-            const newSet = new Set(selectedIds);
-            if (newSet.has(id)) newSet.delete(id); else newSet.add(id);
-            setSelectedIds(newSet);
-          };
-
-          const toggleSelectAll = () => {
-            if (selectedIds.size === history.length) setSelectedIds(new Set());
-            else setSelectedIds(new Set(history.map(h => h.id)));
-          };
+          const toggleSelectId = (id) => { const newSet = new Set(selectedIds); if (newSet.has(id)) newSet.delete(id); else newSet.add(id); setSelectedIds(newSet); };
+          const toggleSelectAll = () => { if (selectedIds.size === history.length) setSelectedIds(new Set()); else setSelectedIds(new Set(history.map(h => h.id))); };
 
           const deleteSelected = () => {
             if (selectedIds.size === 0) return;
-            const input = prompt("KEAMANAN: Masukkan PIN Bendahara:");
-            if (input !== appPin) { alert("Akses Ditolak!"); return; }
+            const input = prompt("KEAMANAN: Masukkan PIN Bendahara:"); if (input !== appPin) return alert("Akses Ditolak!");
             if(confirm(`Yakin hapus ${selectedIds.size} data?`)) {
-                const newHistory = history.filter(h => !selectedIds.has(h.id));
-                setHistory(newHistory);
-                setSelectedIds(new Set());
-                updateCloudHistory(newHistory); // Sync to Cloud
-                alert("Data dihapus.");
+                const newHistory = history.filter(h => !selectedIds.has(h.id)); setHistory(newHistory); setSelectedIds(new Set()); updateCloudHistory(newHistory); alert("Data dihapus.");
             }
           };
 
           const handleEditHistory = (item) => {
-              const input = prompt("KEAMANAN: Masukkan PIN Bendahara:");
-              if (input !== appPin) { alert("Akses Ditolak!"); return; }
+              const input = prompt("KEAMANAN: Masukkan PIN Bendahara:"); if (input !== appPin) return alert("Akses Ditolak!");
               if (confirm("Data akan dimuat kembali ke formulir dan dihapus dari riwayat sementara.")) {
-                  setData(validateAndFixData(item.details));
-                  const newHistory = history.filter(h => h.id !== item.id);
-                  setHistory(newHistory);
-                  updateCloudHistory(newHistory); // Sync to Cloud
-                  alert("Data dimuat.");
-                  setShowHistory(false);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setData(validateAndFixData(item.details)); const newHistory = history.filter(h => h.id !== item.id); setHistory(newHistory); updateCloudHistory(newHistory); alert("Data dimuat."); setShowHistory(false); window.scrollTo({ top: 0, behavior: 'smooth' });
               }
           }
 
           const handleChangePin = () => {
-              if (pinForm.old !== appPin) { alert("PIN Lama salah!"); return; }
-              if (pinForm.new.length < 6) { alert("PIN Baru minimal 6 angka!"); return; }
-              if (pinForm.new !== pinForm.confirm) { alert("Konfirmasi tidak cocok!"); return; }
-              setAppPin(pinForm.new);
-              alert("PIN Berhasil diubah!");
-              setPinForm({ old: '', new: '', confirm: '' });
-              setShowPinModal(false);
+              if (pinForm.old !== appPin) return alert("PIN Lama salah!"); if (pinForm.new.length < 6) return alert("PIN Baru minimal 6 angka!"); if (pinForm.new !== pinForm.confirm) return alert("Konfirmasi tidak cocok!");
+              setAppPin(pinForm.new); alert("PIN Berhasil diubah!"); setPinForm({ old: '', new: '', confirm: '' }); setShowPinModal(false);
           };
 
           const handleForgotPin = () => {
               const input = prompt("Kode Master Pemulihan:");
-              if (input === 'GKPS2025') { 
-                  setAppPin('123456');
-                  alert("PIN di-reset ke: 123456");
-                  setShowPinModal(false);
-                  setPinForm({ old: '', new: '', confirm: '' });
-              } else { alert("Kode Master salah!"); }
+              if (input === 'GKPS2025') { setAppPin('123456'); alert("PIN di-reset ke: 123456"); setShowPinModal(false); setPinForm({ old: '', new: '', confirm: '' }); } else { alert("Kode Master salah!"); }
           };
 
-          const handleSaveConfig = () => {
-              localStorage.setItem('gkps_fb_config', fbConfigRaw);
-              alert("Konfigurasi disimpan. Silakan refresh.");
-              window.location.reload();
-          };
+          const handleSaveConfig = () => { localStorage.setItem('gkps_fb_config', fbConfigRaw); alert("Konfigurasi disimpan. Silakan refresh."); window.location.reload(); };
+          const handleResetConfig = () => { if(confirm("Reset konfigurasi Database?")) { localStorage.removeItem('gkps_fb_config'); setFbConfigRaw(DEFAULT_FIREBASE_CONFIG); alert("Konfigurasi di-reset. Refreshing..."); window.location.reload(); } };
+          const handleDbPinSubmit = () => { if (dbPinInput === appPin) { setShowDbPinModal(false); setDbPinInput(''); setShowDbModal(true); } else { alert("PIN Salah!"); } };
 
-          const handleResetConfig = () => {
-              if(confirm("Reset konfigurasi Database?")) {
-                  localStorage.removeItem('gkps_fb_config');
-                  setFbConfigRaw(DEFAULT_FIREBASE_CONFIG);
-                  alert("Konfigurasi di-reset. Refreshing...");
-                  window.location.reload();
-              }
-          };
-
-          const handleDbPinSubmit = () => {
-              if (dbPinInput === appPin) {
-                  setShowDbPinModal(false);
-                  setDbPinInput('');
-                  setShowDbModal(true); 
-              } else {
-                  alert("PIN Salah!");
-              }
-          };
-
-          // --- RENDER UTAMA ---
-          // Jika Maintenance Aktif, tampilkan layar maintenance
-          if (maintenanceMode) {
-              return <MaintenanceScreen message={maintenanceMsg} />;
-          }
+          if (maintenanceMode) return <MaintenanceScreen message={maintenanceMsg} />;
 
           return (
             <div className="min-h-screen bg-gray-100 font-sans text-gray-800 print:bg-white">
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" style={{ display: 'none' }} />
 
+              {/* NAVIGASI BERDASARKAN GAMBAR 1-11 */}
               <nav className="bg-blue-800 text-white shadow-lg print:hidden sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
                   <div className="flex items-center justify-between h-16">
-                    <div className="flex items-center space-x-3"><Calculator className="h-8 w-8" /><span className="font-bold text-xl tracking-tight hidden sm:block">GKPS App</span></div>
-                    <div className="flex items-center space-x-2">
-                        <span className="text-xs text-blue-200 hidden lg:block mr-2">Auto-saved: {lastSaved}</span>
-                        
-                        <button 
-                           onClick={() => setShowDbPinModal(true)} 
-                           className={`p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} 
-                           title={syncStatus === 'connected' ? 'Online & Sinkron' : 'Mode Offline / Konfigurasi Cloud'}
-                        >
+                    
+                    {/* 11. Auto Saved di sisi Kiri */}
+                    <div className="flex flex-col text-left">
+                        <div className="flex items-center space-x-2">
+                            <span className="font-bold sm:text-lg tracking-tight">GKPS App</span>
+                        </div>
+                        <span className="text-[10px] sm:text-xs text-blue-200">Auto-saved: {lastSaved}</span>
+                    </div>
+
+                    {/* Tombol-Tombol 1-10 di Kanan */}
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                        {/* 1. Online & Sinkron */}
+                        <button onClick={() => setShowDbPinModal(true)} className={`p-1.5 sm:p-2 rounded ${syncStatus === 'connected' ? 'bg-green-600 hover:bg-green-500' : (syncStatus === 'error' ? 'bg-red-600' : 'bg-gray-600 hover:bg-gray-500')}`} title="Online & Sinkron">
                             {syncStatus === 'connected' ? <Cloud className="h-5 w-5"/> : <CloudOff className="h-5 w-5"/>}
                         </button>
-
-                        <button onClick={() => setShowHelp(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan"><HelpCircle className="h-5 w-5"/></button>
-                        <button onClick={() => setShowShareModal(true)} className="p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share QR"><QrCode className="h-5 w-5"/></button>
-                        <button onClick={() => setShowPinModal(true)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN"><Lock className="h-5 w-5 text-yellow-300"/></button>
-                        <button onClick={() => setShowHistory(!showHistory)} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Riwayat"><BarChart2 className="h-5 w-5"/></button>
-                        <button onClick={saveToHistory} className="p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan Arsip"><Save className="h-5 w-5"/></button>
+                        {/* 2. Panduan */}
+                        <button onClick={() => setShowHelp(true)} className="p-1.5 sm:p-2 bg-blue-600 rounded hover:bg-blue-500" title="Panduan"><HelpCircle className="h-5 w-5"/></button>
+                        {/* 3. Share QR */}
+                        <button onClick={() => setShowShareModal(true)} className="p-1.5 sm:p-2 bg-blue-600 rounded hover:bg-blue-500" title="Share QR"><QrCode className="h-5 w-5"/></button>
+                        {/* 4. Ganti PIN */}
+                        <button onClick={() => setShowPinModal(true)} className="p-1.5 sm:p-2 bg-blue-700 rounded hover:bg-blue-600" title="Ganti PIN"><Lock className="h-5 w-5 text-yellow-300"/></button>
+                        {/* 5. Riwayat */}
+                        <button onClick={() => setShowHistory(!showHistory)} className="p-1.5 sm:p-2 bg-blue-700 rounded hover:bg-blue-600" title="Riwayat"><BarChart2 className="h-5 w-5"/></button>
+                        {/* 6. Simpan Arsip */}
+                        <button onClick={saveToHistory} className="p-1.5 sm:p-2 bg-blue-700 rounded hover:bg-blue-600" title="Simpan Arsip"><Save className="h-5 w-5"/></button>
+                        
+                        {/* 7 & 8 Backup & Restore */}
                         <div className="hidden md:flex bg-blue-900 rounded p-1 space-x-1">
-                            <button onClick={handleExport} className="p-1.5 hover:bg-blue-800 rounded transition" title="Backup"><Download className="h-4 w-4 text-green-300"/></button>
-                            <button onClick={handleImportClick} className="p-1.5 hover:bg-blue-800 rounded transition" title="Restore"><Upload className="h-4 w-4 text-yellow-300"/></button>
+                            <button onClick={handleExport} className="p-1 sm:p-1.5 hover:bg-blue-800 rounded transition" title="Backup"><Download className="h-4 w-4 text-green-300"/></button>
+                            <button onClick={handleImportClick} className="p-1 sm:p-1.5 hover:bg-blue-800 rounded transition" title="Restore"><Upload className="h-4 w-4 text-yellow-300"/></button>
                         </div>
-                        <button onClick={resetData} className="p-2 bg-red-600 rounded hover:bg-red-500" title="Reset"><Trash2 className="h-5 w-5"/></button>
-                        <button onClick={handlePrint} className="flex items-center space-x-2 px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold"><Printer className="h-5 w-5"/><span>Cetak</span></button>
+                        
+                        {/* 9. Reset */}
+                        <button onClick={resetData} className="p-1.5 sm:p-2 bg-red-600 rounded hover:bg-red-500" title="Reset"><Trash2 className="h-5 w-5"/></button>
+                        {/* 10. Cetak */}
+                        <button onClick={handlePrint} className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-green-600 rounded hover:bg-green-500 font-bold text-sm sm:text-base">
+                            <Printer className="h-4 w-4 sm:h-5 sm:w-5"/>
+                            <span className="hidden sm:inline">Cetak</span>
+                        </button>
                     </div>
                   </div>
                 </div>
               </nav>
 
-              <main className="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8 print:max-w-full print:p-0">
+              <main className="max-w-5xl mx-auto py-6 px-2 sm:px-6 lg:px-8 print:max-w-full print:p-0">
                 
-                {/* --- MODAL PIN KHUSUS UNTUK AKSES DB --- */}
+                {/* MODALS */}
                 {showDbPinModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[80] flex justify-center items-center p-4 print:hidden animate-fade-in">
-                        <div className="bg-white rounded-lg w-full max-w-sm shadow-2xl flex flex-col p-6">
-                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
-                                <Lock className="w-5 h-5 mr-2 text-red-600"/> Keamanan Database
-                            </h3>
-                            <p className="text-sm text-gray-600 mb-4">Area ini khusus untuk Administrator/Bendahara. Masukkan PIN untuk melanjutkan.</p>
-                            <input 
-                                type="password" 
-                                value={dbPinInput} 
-                                onChange={(e) => setDbPinInput(e.target.value)} 
-                                className="w-full border rounded p-2 mb-4 text-center tracking-widest text-lg" 
-                                placeholder="PIN" 
-                                autoFocus
-                            />
-                            <div className="flex justify-end space-x-2">
-                                <button onClick={() => setShowDbPinModal(false)} className="px-4 py-2 bg-gray-200 rounded text-gray-700 hover:bg-gray-300">Batal</button>
-                                <button onClick={handleDbPinSubmit} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold">Buka</button>
-                            </div>
-                        </div>
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[80] flex justify-center items-center p-4 animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-sm flex flex-col p-6"><h3 className="font-bold text-lg mb-4 flex items-center"><Lock className="w-5 h-5 mr-2 text-red-600"/> Keamanan DB</h3><input type="password" value={dbPinInput} onChange={(e) => setDbPinInput(e.target.value)} className="w-full border p-2 mb-4" placeholder="PIN"/><div className="flex justify-end space-x-2"><button onClick={() => setShowDbPinModal(false)} className="px-4 py-2 bg-gray-200 rounded">Batal</button><button onClick={handleDbPinSubmit} className="px-4 py-2 bg-red-600 text-white rounded font-bold">Buka</button></div></div>
                     </div>
                 )}
-
                 {showDbModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
-                        <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col p-6">
-                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center"><Settings className="w-5 h-5 mr-2 text-blue-600"/> Pengaturan Database</h3>
-                            <textarea value={fbConfigRaw} onChange={(e) => setFbConfigRaw(e.target.value)} rows="6" className="w-full border rounded p-2 text-xs font-mono bg-gray-50"/>
-                            <div className="mt-4 flex justify-between"><button onClick={handleResetConfig} className="text-red-500 text-xs">Reset Config</button><div className="space-x-2"><button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded">Tutup</button><button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded">Simpan</button></div></div>
-                        </div>
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-lg p-6"><h3 className="font-bold text-lg mb-4"><Settings className="w-5 h-5 inline mr-2"/> Pengaturan DB</h3><textarea value={fbConfigRaw} onChange={(e) => setFbConfigRaw(e.target.value)} rows="6" className="w-full border rounded p-2 text-xs bg-gray-50"/><div className="mt-4 flex justify-between"><button onClick={handleResetConfig} className="text-red-500 text-xs">Reset Config</button><div className="space-x-2"><button onClick={() => setShowDbModal(false)} className="px-4 py-2 bg-gray-200 rounded">Tutup</button><button onClick={handleSaveConfig} className="px-4 py-2 bg-green-600 text-white rounded">Simpan</button></div></div></div>
                     </div>
                 )}
-
                 {showPinModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
-                        <div className="bg-white rounded-lg w-full max-w-sm shadow-2xl flex flex-col p-6">
-                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center"><Lock className="w-5 h-5 mr-2 text-blue-600"/> Ganti PIN</h3>
-                            <div className="space-y-3">
-                                <input type="password" value={pinForm.old} onChange={(e) => setPinForm({...pinForm, old: e.target.value})} className="w-full border rounded p-2" placeholder="PIN Lama" />
-                                <input type="password" value={pinForm.new} onChange={(e) => setPinForm({...pinForm, new: e.target.value})} className="w-full border rounded p-2" placeholder="PIN Baru (6 digit)" />
-                                <input type="password" value={pinForm.confirm} onChange={(e) => setPinForm({...pinForm, confirm: e.target.value})} className="w-full border rounded p-2" placeholder="Konfirmasi PIN Baru" />
-                            </div>
-                            <div className="mt-6 flex justify-between"><button onClick={handleForgotPin} className="text-xs text-red-500 hover:underline">Lupa PIN?</button><div className="space-x-2"><button onClick={() => setShowPinModal(false)} className="px-4 py-2 bg-gray-200 rounded">Batal</button><button onClick={handleChangePin} className="px-4 py-2 bg-blue-600 text-white rounded">Simpan</button></div></div>
-                        </div>
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-sm p-6"><h3 className="font-bold text-lg mb-4"><Lock className="w-5 h-5 inline mr-2"/> Ganti PIN</h3><input type="password" value={pinForm.old} onChange={(e) => setPinForm({...pinForm, old: e.target.value})} className="w-full border p-2 mb-2 rounded" placeholder="PIN Lama"/><input type="password" value={pinForm.new} onChange={(e) => setPinForm({...pinForm, new: e.target.value})} className="w-full border p-2 mb-2 rounded" placeholder="PIN Baru (6 angka)"/><input type="password" value={pinForm.confirm} onChange={(e) => setPinForm({...pinForm, confirm: e.target.value})} className="w-full border p-2 mb-4 rounded" placeholder="Konfirmasi PIN"/><div className="flex justify-between mt-2"><button onClick={handleForgotPin} className="text-xs text-red-500">Lupa PIN?</button><div className="space-x-2"><button onClick={() => setShowPinModal(false)} className="px-4 py-2 bg-gray-200 rounded">Batal</button><button onClick={handleChangePin} className="px-4 py-2 bg-blue-600 text-white rounded">Simpan</button></div></div></div>
                     </div>
                 )}
-
                 {showShareModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 print:hidden animate-fade-in">
-                        <div className="bg-white rounded-lg w-full max-w-md shadow-2xl flex flex-col p-6">
-                            <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center"><QrCode className="w-5 h-5 mr-2 text-blue-600"/> Share QR</h3>
-                            <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded border"><QrCodeCanvas value={urlToShare} /><p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p></div>
-                            <div className="mt-6 flex justify-end"><button onClick={() => setShowShareModal(false)} className="px-4 py-2 bg-gray-200 rounded">Tutup</button></div>
-                        </div>
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[70] flex justify-center items-center p-4 animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-md p-6"><h3 className="font-bold text-lg mb-4"><QrCode className="w-5 h-5 inline mr-2"/> Share QR</h3><div className="flex flex-col items-center p-4 bg-gray-50 rounded border"><QrCodeCanvas value={urlToShare} /><p className="text-xs text-gray-500 mt-2 text-center w-full break-all font-mono">{urlToShare}</p></div><div className="mt-6 flex justify-end"><button onClick={() => setShowShareModal(false)} className="px-4 py-2 bg-gray-200 rounded">Tutup</button></div></div>
+                    </div>
+                )}
+                {showHelp && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex justify-center items-center p-4 animate-fade-in">
+                        <div className="bg-white rounded-lg w-full max-w-lg p-6"><h3 className="font-bold text-lg text-blue-900 mb-4"><HelpCircle className="inline w-5 h-5 mr-2"/> Panduan</h3><div className="space-y-4 text-sm text-gray-700"><p><b>1. Online (Awan):</b> Status terhubung ke Cloud.</p><p><b>2. Arsip:</b> Tombol disket menyimpan ke riwayat.</p><p><b>3. Backup:</b> Download data jika aplikasi offline.</p></div><div className="mt-6 text-right"><button onClick={() => setShowHelp(false)} className="px-6 py-2 bg-blue-600 text-white rounded font-bold">Tutup</button></div></div>
                     </div>
                 )}
 
+                {/* RIWAYAT */}
                 {showHistory && (
                     <div className="mb-6 bg-white shadow-xl rounded-lg p-6 print:hidden border border-blue-200">
                         <div className="flex justify-between items-center mb-4 border-b pb-2">
                             <h3 className="font-bold text-lg text-gray-800 flex items-center"><History className="inline w-5 h-5 mr-2 text-blue-600"/> Riwayat</h3>
                             <div className="flex space-x-2 items-center">
-                                {/* TOMBOL EXPORT BULANAN BARU */}
-                                <button onClick={handleExportMonthlyExcel} className="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-md font-bold flex items-center hover:bg-green-200 border border-green-200">
-                                    <FileSpreadsheet className="w-3 h-3 mr-1"/> Export Bulanan
-                                </button>
+                                <button onClick={handleExportMonthlyExcel} className="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-md font-bold flex items-center hover:bg-green-200 border border-green-200"><FileSpreadsheet className="w-3 h-3 mr-1"/> Export Bulanan</button>
                                 {selectedIds.size > 0 && (<button onClick={deleteSelected} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-md font-bold flex items-center"><Trash2 className="w-3 h-3 mr-1"/> Hapus ({selectedIds.size})</button>)}
                             </div>
                         </div>
@@ -953,7 +606,7 @@
                 <div className="bg-white shadow-xl rounded-lg overflow-hidden print:shadow-none print:rounded-none">
                     <div className="border-b-4 border-blue-800 p-6 text-center print-header">
                         <h1 className="text-2xl font-bold uppercase">Formulir Setoran Kolekte</h1>
-                        <h2 className="text-xl font-semibold text-blue-800">GKPS TANGERANG</h2>
+                        <h2 className="text-xl font-semibold text-blue-800">{isPartonggoan ? "PARTONGGOAN " : ""}GKPS TANGERANG</h2>
                     </div>
 
                     <div className="p-6 bg-gray-50 border-b border-gray-200 print-grid-compact print:bg-white">
@@ -969,12 +622,21 @@
                             <div><label className="block text-sm font-medium">Pengkhotbah</label><input type="text" name="pengkhotbah" value={data.metadata.pengkhotbah} onChange={handleMetaChange} className="mt-1 block w-full rounded border-gray-300 print-input-compact" /></div>
                             <div>
                                 <label className="block text-sm font-medium mb-1">Kehadiran</label>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="text-center"><span className="text-xs text-gray-500">Pria</span><input type="number" name="pria" value={data.kehadiran.pria === '' ? '' : data.kehadiran.pria} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                    <div className="text-center"><span className="text-xs text-gray-500">Wanita</span><input type="number" name="wanita" value={data.kehadiran.wanita === '' ? '' : data.kehadiran.wanita} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
-                                </div>
+                                {!isPartonggoan ? (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="text-center"><span className="text-xs text-gray-500">Pria</span><input type="number" name="pria" value={data.kehadiran.pria === '' ? '' : data.kehadiran.pria} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                        <div className="text-center"><span className="text-xs text-gray-500">Wanita</span><input type="number" name="wanita" value={data.kehadiran.wanita === '' ? '' : data.kehadiran.wanita} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-4 gap-2">
+                                        <div className="text-center"><span className="text-[10px] text-gray-500">Bapa</span><input type="number" name="bapa" value={data.kehadiran.bapa === '' ? '' : data.kehadiran.bapa} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                        <div className="text-center"><span className="text-[10px] text-gray-500">Inang</span><input type="number" name="inang" value={data.kehadiran.inang === '' ? '' : data.kehadiran.inang} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                        <div className="text-center"><span className="text-[10px] text-gray-500">SM</span><input type="number" name="sm" value={data.kehadiran.sm === '' ? '' : data.kehadiran.sm} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                        <div className="text-center"><span className="text-[10px] text-gray-500">Pemuda</span><input type="number" name="pemuda" value={data.kehadiran.pemuda === '' ? '' : data.kehadiran.pemuda} onChange={handleAttChange} className="w-full text-center border-gray-300 rounded print-input-compact"/></div>
+                                    </div>
+                                )}
                             </div>
-                            <div className="text-right text-xs font-bold text-gray-700 mt-1">Total: {(data.kehadiran.pria||0) + (data.kehadiran.wanita||0)} Jiwa</div>
+                            <div className="text-right text-xs font-bold text-gray-700 mt-1">Total: {calculateTotalJiwa()} Jiwa</div>
                         </div>
                     </div>
 
@@ -997,12 +659,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
-                        {/* --- HINT UNTUK PENGGUNA MOBILE --- */}
-                        <div className="md:hidden text-center mt-2">
-                             <p className="text-xs text-gray-400 italic">Geser tabel ke samping &gt;&gt; untuk melihat kantong lain</p>
-                        </div>
-
+                        <div className="md:hidden text-center mt-2"><p className="text-xs text-gray-400 italic">Geser tabel ke samping &gt;&gt;</p></div>
                         <div className="mt-4 flex justify-end print:mt-2">
                              <div className="bg-blue-900 text-white p-3 rounded shadow print:bg-white print:text-black print:border print:shadow-none print:w-full print:flex print:justify-between print:p-1"><span className="font-bold mr-4">TOTAL KESELURUHAN:</span><span className="font-bold text-xl print:text-lg">{formatRupiah(calculateGrandTotal())}</span></div>
                         </div>
@@ -1022,103 +679,69 @@
                     </div>
                 </div>
 
-                {showHelp && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex justify-center items-center p-4 print:hidden animate-fade-in">
-                        <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl flex flex-col p-6">
-                            <h3 className="font-bold text-lg text-blue-900 mb-4"><HelpCircle className="inline w-5 h-5 mr-2"/> Panduan</h3>
-                            <div className="space-y-4 text-sm text-gray-700">
-                                <p><b>1. Mode Online (Awan Hijau):</b> Data otomatis tersimpan di Cloud dan sinkron antara HP & Laptop.</p>
-                                <p><b>2. Mode Offline (Awan Abu):</b> Data hanya tersimpan di HP ini. Gunakan Backup/Restore untuk pindah data.</p>
-                                <p><b>3. Masalah Input:</b> Jika angka sering kembali ke 0, coba ketik perlahan. Sistem akan menunggu anda selesai mengetik sebelum sync.</p>
-                            </div>
-                            <div className="mt-6 text-right"><button onClick={() => setShowHelp(false)} className="px-6 py-2 bg-blue-600 text-white rounded font-bold">Tutup</button></div>
-                        </div>
-                    </div>
-                )}
-                
-                {/* --- UPDATE: MODAL VIEW DATA (DETAIL RIWAYAT) --- */}
+                {/* MODAL VIEW DATA (DETAIL RIWAYAT) */}
                 {viewData && (
                     <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4 print:hidden animate-fade-in">
                         <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-                            {/* Modal Header */}
                             <div className="p-4 border-b bg-gray-50 flex justify-between items-center flex-shrink-0">
-                                <div className="flex items-center space-x-2"><Eye className="w-5 h-5 text-blue-600"/><h3 className="font-bold text-lg text-gray-800">Detail Riwayat (Hanya Lihat)</h3></div>
+                                <div className="flex items-center space-x-2"><Eye className="w-5 h-5 text-blue-600"/><h3 className="font-bold text-lg text-gray-800">Detail Riwayat</h3></div>
                                 <button onClick={() => setViewData(null)} className="p-2 hover:bg-gray-200 rounded-full transition"><X className="w-6 h-6 text-gray-600"/></button>
                             </div>
-                            
-                            {/* Modal Content (Mirip Form Utama) */}
                             <div className="p-6 overflow-y-auto modal-scroll flex-grow bg-white">
                                 <div className="border-b-4 border-blue-800 p-4 text-center mb-6">
                                     <h1 className="text-xl font-bold uppercase">Formulir Setoran Kolekte</h1>
-                                    <h2 className="text-lg font-semibold text-blue-800">GKPS TANGERANG</h2>
+                                    <h2 className="text-lg font-semibold text-blue-800">{viewData.metadata.jenisIbadah === "Partonggoan" ? "PARTONGGOAN " : ""}GKPS TANGERANG</h2>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-6 mb-6">
                                     <div className="space-y-3">
                                         <div><label className="text-xs text-gray-500 uppercase">Tanggal</label><div className="font-bold">{new Date(viewData.metadata.tanggal).toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}</div></div>
                                         <div><label className="text-xs text-gray-500 uppercase">Sektor</label><div className="font-bold">{viewData.metadata.sektor}</div></div>
                                         <div><label className="text-xs text-gray-500 uppercase">Jenis Ibadah</label><div className="font-bold">{viewData.metadata.jenisIbadah}</div></div>
-                                        <div><label className="text-xs text-gray-500 uppercase">Minggu/Nama</label><div className="font-bold">{viewData.metadata.minggu || '-'}</div></div>
                                     </div>
                                     <div className="space-y-3">
                                         <div><label className="text-xs text-gray-500 uppercase">Pengkhotbah</label><div className="font-bold">{viewData.metadata.pengkhotbah || '-'}</div></div>
                                         <div>
                                             <label className="text-xs text-gray-500 uppercase mb-1 block">Kehadiran</label>
                                             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-2 rounded border">
-                                                <div className="text-center"><span className="text-[10px] text-gray-400">Pria</span><div className="font-bold">{viewData.kehadiran.pria}</div></div>
-                                                <div className="text-center"><span className="text-[10px] text-gray-400">Wanita</span><div className="font-bold">{viewData.kehadiran.wanita}</div></div>
+                                                {viewData.metadata.jenisIbadah !== "Partonggoan" ? (
+                                                    <>
+                                                        <div className="text-center"><span className="text-[10px] text-gray-400">Pria</span><div className="font-bold">{viewData.kehadiran.pria || 0}</div></div>
+                                                        <div className="text-center"><span className="text-[10px] text-gray-400">Wanita</span><div className="font-bold">{viewData.kehadiran.wanita || 0}</div></div>
+                                                    </>
+                                                ) : (
+                                                    <div className="col-span-2 grid grid-cols-4 gap-2">
+                                                        <div className="text-center"><span className="text-[10px] text-gray-400">Bapa</span><div className="font-bold">{viewData.kehadiran.bapa || 0}</div></div>
+                                                        <div className="text-center"><span className="text-[10px] text-gray-400">Inang</span><div className="font-bold">{viewData.kehadiran.inang || 0}</div></div>
+                                                        <div className="text-center"><span className="text-[10px] text-gray-400">SM</span><div className="font-bold">{viewData.kehadiran.sm || 0}</div></div>
+                                                        <div className="text-center"><span className="text-[10px] text-gray-400">Pemuda</span><div className="font-bold">{viewData.kehadiran.pemuda || 0}</div></div>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="text-right text-xs font-bold mt-1">Total: {(viewData.kehadiran.pria||0)+(viewData.kehadiran.wanita||0)} Jiwa</div>
+                                            <div className="text-right text-xs font-bold mt-1">Total: {viewData.metadata.jenisIbadah !== "Partonggoan" ? (viewData.kehadiran.pria||0)+(viewData.kehadiran.wanita||0) : (viewData.kehadiran.bapa||0)+(viewData.kehadiran.inang||0)+(viewData.kehadiran.sm||0)+(viewData.kehadiran.pemuda||0)} Jiwa</div>
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="mb-6">
                                     <h4 className="text-sm font-bold text-gray-700 mb-2 border-b pb-1">Rincian Perhitungan</h4>
                                     <div className="overflow-x-auto scrolling-touch">
                                         <table className="min-w-full divide-y divide-gray-200 border text-sm">
-                                            <thead className="bg-gray-50">
-                                                <tr><th className="py-2 px-2 text-left font-medium">Pecahan</th>{KANTONG_LABELS.map(k => <th key={k.id} className={`py-2 px-2 text-center ${k.color}`}>{k.name}</th>)}</tr>
-                                            </thead>
+                                            <thead className="bg-gray-50"><tr><th className="py-2 px-2 text-left font-medium">Pecahan</th>{KANTONG_LABELS.map(k => <th key={k.id} className={`py-2 px-2 text-center ${k.color}`}>{k.name}</th>)}</tr></thead>
                                             <tbody>
                                                 {DENOMINATIONS.map(d => (
-                                                    <tr key={d.value} className="border-b last:border-0">
-                                                        <td className="py-1 px-2 font-medium">{d.label}</td>
-                                                        {KANTONG_LABELS.map(k => (
-                                                            <td key={`${k.id}-${d.value}`} className="py-1 px-2 text-center">
-                                                                {viewData.uang[k.id]?.[d.value] > 0 ? (<span>{viewData.uang[k.id][d.value]} <span className="text-[10px] text-gray-400">lbr</span></span>) : <span className="text-gray-300">-</span>}
-                                                            </td>
-                                                        ))}
-                                                    </tr>
+                                                    <tr key={d.value} className="border-b last:border-0"><td className="py-1 px-2 font-medium">{d.label}</td>{KANTONG_LABELS.map(k => (<td key={`${k.id}-${d.value}`} className="py-1 px-2 text-center">{viewData.uang[k.id]?.[d.value] > 0 ? (<span>{viewData.uang[k.id][d.value]} <span className="text-[10px] text-gray-400">lbr</span></span>) : <span className="text-gray-300">-</span>}</td>))}</tr>
                                                 ))}
-                                                <tr className="bg-gray-100 font-bold border-t-2 border-gray-300">
-                                                    <td className="py-2 px-2">Total</td>
-                                                    {KANTONG_LABELS.map(k => (<td key={k.id} className="py-2 px-2 text-right">{formatRupiah(calculateBagTotal(k.id, viewData))}</td>))}
-                                                </tr>
+                                                <tr className="bg-gray-100 font-bold border-t-2 border-gray-300"><td className="py-2 px-2">Total</td>{KANTONG_LABELS.map(k => (<td key={k.id} className="py-2 px-2 text-right">{formatRupiah(calculateBagTotal(k.id, viewData))}</td>))}</tr>
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div className="mt-4 flex justify-end">
-                                         <div className="bg-blue-100 text-blue-900 p-3 rounded font-bold text-lg border border-blue-200">
-                                            TOTAL: {formatRupiah(calculateGrandTotal(viewData))}
-                                         </div>
-                                    </div>
+                                    <div className="mt-4 flex justify-end"><div className="bg-blue-100 text-blue-900 p-3 rounded font-bold text-lg border border-blue-200">TOTAL: {formatRupiah(calculateGrandTotal(viewData))}</div></div>
                                 </div>
-
                                 <div className="bg-gray-50 p-4 rounded border">
                                     <h4 className="text-sm font-bold uppercase mb-4 text-center text-gray-500">Pengesahan</h4>
                                     <div className="grid grid-cols-3 gap-4 text-center">
-                                        {[
-                                            {role:'Penghitung 1', key:'penghitung1'}, 
-                                            {role:'Penghitung 2', key:'penghitung2'}, 
-                                            {role:'Bendahara', key:'bendahara'}
-                                        ].map(signer => (
+                                        {[{role:'Penghitung 1', key:'penghitung1'}, {role:'Penghitung 2', key:'penghitung2'}, {role:'Bendahara', key:'bendahara'}].map(signer => (
                                             <div key={signer.key} className="flex flex-col items-center">
-                                                <div className="h-16 w-full border-b border-gray-400 mb-2 flex items-end justify-center pb-1">
-                                                    {viewData.tandaTangan[`sign_${signer.key}`] ? (
-                                                        <span className="font-handwriting text-lg italic text-blue-800">{viewData.tandaTangan[`sign_${signer.key}`]}</span>
-                                                    ) : <span className="text-xs text-gray-300 italic">(Empty)</span>}
-                                                </div>
+                                                <div className="h-16 w-full border-b border-gray-400 mb-2 flex items-end justify-center pb-1">{viewData.tandaTangan[`sign_${signer.key}`] ? (<span className="font-handwriting text-lg italic text-blue-800">{viewData.tandaTangan[`sign_${signer.key}`]}</span>) : <span className="text-xs text-gray-300 italic">(Empty)</span>}</div>
                                                 <div className="font-bold text-sm">{viewData.tandaTangan[signer.key] || '-'}</div>
                                                 <label className="text-[10px] text-gray-500 uppercase">{signer.role}</label>
                                             </div>
@@ -1126,15 +749,10 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                            {/* Modal Footer */}
-                            <div className="p-4 border-t bg-gray-100 flex justify-end">
-                                <button onClick={() => setViewData(null)} className="px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition">Tutup</button>
-                            </div>
+                            <div className="p-4 border-t bg-gray-100 flex justify-end"><button onClick={() => setViewData(null)} className="px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">Tutup</button></div>
                         </div>
                     </div>
                 )}
-
               </main>
             </div>
           );

@@ -983,7 +983,7 @@
                 )}
 
                 {/* FORMULIR UTAMA */}
-                <div className="bg-white shadow-xl rounded-lg overflow-hidden print:shadow-none print:rounded-none">
+                <div className={`bg-white shadow-xl rounded-lg overflow-hidden print:shadow-none print:rounded-none ${viewData ? 'print:hidden' : ''}`}>
                     <div className="border-b-4 border-blue-800 p-6 text-center print-header">
                         <h1 className="text-2xl font-bold uppercase">Formulir Setoran Kolekte</h1>
                         <h2 className="text-xl font-semibold text-blue-800">
@@ -1087,17 +1087,17 @@
                 
                 {/* --- UPDATE: MODAL VIEW DATA (DETAIL RIWAYAT) --- */}
                 {viewData && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4 print:hidden animate-fade-in">
-                        <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4 animate-fade-in print:absolute print:inset-0 print:bg-transparent print:p-0">
+                        <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col print:shadow-none print:rounded-none print:overflow-visible print:max-h-none print:block">
                             {/* Modal Header */}
-                            <div className="p-4 border-b bg-gray-50 flex justify-between items-center flex-shrink-0">
+                            <div className="p-4 border-b bg-gray-50 flex justify-between items-center flex-shrink-0 print:hidden">
                                 <div className="flex items-center space-x-2"><Eye className="w-5 h-5 text-blue-600"/><h3 className="font-bold text-lg text-gray-800">Detail Riwayat (Hanya Lihat)</h3></div>
                                 <button onClick={() => setViewData(null)} className="p-2 hover:bg-gray-200 rounded-full transition"><X className="w-6 h-6 text-gray-600"/></button>
                             </div>
                             
                             {/* Modal Content (Mirip Form Utama) */}
-                            <div className="p-6 overflow-y-auto modal-scroll flex-grow bg-white">
-                                <div className="border-b-4 border-blue-800 p-4 text-center mb-6">
+                            <div className="p-6 overflow-y-auto modal-scroll flex-grow bg-white print:overflow-visible print:p-0">
+                                <div className="border-b-4 border-blue-800 p-4 text-center mb-6 print-header print:mb-2">
                                     <h1 className="text-xl font-bold uppercase">Formulir Setoran Kolekte</h1>
                                     <h2 className="text-lg font-semibold text-blue-800">
                                         {viewData.metadata.jenisIbadah === "Partonggoan" ? "PARTONGGOAN " : ""}GKPS TANGERANG
@@ -1172,8 +1172,8 @@
                                     </div>
                                 </div>
 
-                                <div className="bg-gray-50 p-4 rounded border">
-                                    <h4 className="text-sm font-bold uppercase mb-4 text-center text-gray-500">Pengesahan</h4>
+                                <div className="bg-gray-50 p-4 rounded border print-signature-area print:bg-white print:border-none">
+                                    <h4 className="text-sm font-bold uppercase mb-4 text-center text-gray-500 print:mb-2">Pengesahan</h4>
                                     <div className="grid grid-cols-3 gap-4 text-center">
                                         {[
                                             {role:'Penghitung 1', key:'penghitung1'}, 
@@ -1181,9 +1181,9 @@
                                             {role:'Bendahara', key:'bendahara'}
                                         ].map(signer => (
                                             <div key={signer.key} className="flex flex-col items-center">
-                                                <div className="h-16 w-full border-b border-gray-400 mb-2 flex items-end justify-center pb-1">
+                                                <div className="h-16 w-full border-b border-gray-400 mb-2 flex items-end justify-center pb-1 print-signature-box print:pt-4">
                                                     {viewData.tandaTangan[`sign_${signer.key}`] ? (
-                                                        <span className="font-handwriting text-lg italic text-blue-800">{viewData.tandaTangan[`sign_${signer.key}`]}</span>
+                                                        <span className="font-handwriting text-lg italic text-blue-800 print:text-black">{viewData.tandaTangan[`sign_${signer.key}`]}</span>
                                                     ) : <span className="text-xs text-gray-300 italic">(Empty)</span>}
                                                 </div>
                                                 <div className="font-bold text-sm">{viewData.tandaTangan[signer.key] || '-'}</div>
@@ -1195,7 +1195,10 @@
                             </div>
                             
                             {/* Modal Footer */}
-                            <div className="p-4 border-t bg-gray-100 flex justify-end">
+                            <div className="p-4 border-t bg-gray-100 flex justify-end space-x-2 print:hidden">
+                                <button onClick={handlePrint} className="px-6 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700 transition flex items-center">
+                                    <Printer className="w-5 h-5 mr-2" /> Cetak
+                                </button>
                                 <button onClick={() => setViewData(null)} className="px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition">Tutup</button>
                             </div>
                         </div>

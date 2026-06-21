@@ -51,7 +51,7 @@
     <!-- React versi DEVELOPMENT: menampilkan pesan error yang jelas (ganti ke .production.min.js nanti setelah stabil) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js" onerror="gkpsCdnFail('React')"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" onerror="gkpsCdnFail('ReactDOM')"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js" onerror="gkpsCdnFail('Babel')"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" onerror="gkpsCdnFail('Babel')"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" onerror="gkpsCdnFail('QRious')"></script>
 
@@ -169,15 +169,15 @@
     </style>
 </head>
 <body class="bg-gray-100">
-    <div id="root">
-        <!-- Fallback: tampil hanya jika React belum berhasil mount dalam 8 detik -->
-        <div id="gkps-loading" style="font-family:system-ui,Arial,sans-serif;padding:40px;text-align:center;color:#555">
-            <div style="font-size:18px;font-weight:600;color:#1e40af">Memuat Aplikasi Kolekte GKPS…</div>
-            <div style="margin-top:8px;font-size:13px">Mohon tunggu. Jika layar ini tidak hilang dalam beberapa detik, periksa koneksi internet.</div>
-        </div>
+    <div id="root"></div>
+
+    <!-- Fallback loading: DI LUAR #root, dihapus setelah React selesai mount -->
+    <div id="gkps-loading" style="font-family:system-ui,Arial,sans-serif;padding:40px;text-align:center;color:#555">
+        <div style="font-size:18px;font-weight:600;color:#1e40af">Memuat Aplikasi Kolekte GKPS…</div>
+        <div style="margin-top:8px;font-size:13px">Mohon tunggu. Jika layar ini tidak hilang dalam beberapa detik, periksa koneksi internet.</div>
     </div>
 
-    <script type="text/babel">
+    <script type="text/jsx-source" id="gkps-app-source">
         const { useState, useEffect, useRef, useCallback } = React;
 
         // --- DEFINISI IKON ---
@@ -1285,17 +1285,59 @@
         try {
             const rootEl = document.getElementById('root');
             const root = ReactDOM.createRoot(rootEl);
+
+            // Komponen pembantu: menghapus layar "Memuat" tepat setelah React selesai mount
+            function MountSignal() {
+                React.useEffect(() => {
+                    const loadingEl = document.getElementById('gkps-loading');
+                    if (loadingEl) loadingEl.remove();
+                }, []);
+                return null;
+            }
+
             root.render(
                 <GkpsErrorBoundary>
+                    <MountSignal />
                     <App />
                 </GkpsErrorBoundary>
             );
-            // Berhasil mount -> hapus layar "Memuat..."
-            const loadingEl = document.getElementById('gkps-loading');
-            if (loadingEl) loadingEl.remove();
         } catch (err) {
             gkpsShowFatal('Render gagal: ' + (err && err.stack ? err.stack : err));
         }
+    </script>
+
+    <!-- KONTROLER: compile JSX secara manual dengan classic runtime (TIDAK menghasilkan 'import') -->
+    <script>
+        (function () {
+            function jalankanApp() {
+                try {
+                    if (typeof Babel === 'undefined') {
+                        gkpsShowFatal('Library Babel tidak termuat. Periksa koneksi internet, lalu Muat Ulang.');
+                        return;
+                    }
+                    var sourceEl = document.getElementById('gkps-app-source');
+                    if (!sourceEl) { gkpsShowFatal('Blok kode aplikasi tidak ditemukan.'); return; }
+                    var jsx = sourceEl.textContent;
+
+                    // Compile dengan classic runtime -> memakai React.createElement, TANPA import.
+                    var compiled = Babel.transform(jsx, {
+                        presets: [['react', { runtime: 'classic' }]]
+                    }).code;
+
+                    // Jalankan kode hasil compile (scope global, akses React/ReactDOM/firebase/dll)
+                    var runner = new Function(compiled);
+                    runner();
+                } catch (err) {
+                    gkpsShowFatal('Gagal menjalankan aplikasi: ' + (err && err.stack ? err.stack : err));
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', jalankanApp);
+            } else {
+                jalankanApp();
+            }
+        })();
     </script>
 </body>
 </html>
